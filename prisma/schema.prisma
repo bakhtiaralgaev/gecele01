@@ -1,0 +1,111 @@
+// Gecələ — istirahət evləri marketpleysi
+// SQLite ilə v1; sahələr Postgres-ə birbaşa köçürülə bilən şəkildə seçilib.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  role         String    @default("guest") // guest | host
+  name         String
+  email        String?   @unique
+  phone        String?   @unique
+  passwordHash String    @default("")
+  provider     String    @default("email") // email | phone | google | apple
+  createdAt    DateTime  @default(now())
+  listings     Listing[]
+  bookings     Booking[]
+}
+
+model Listing {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  title         String
+  region        String
+  type          String
+  pricePerNight Int
+  rating        Float     @default(0)
+  reviews       Int       @default(0)
+  maxGuests     Int
+  bedrooms      Int
+  pool          Boolean   @default(false)
+  amenities     String // JSON massiv: '["Manqal","Wi-Fi"]'
+  hostName      String
+  hostPhone     String    @default("")
+  photo         String
+  photos        String    @default("[]") // JSON massiv — qalereya
+  lat           Float?    // enlik — xəritə üçün
+  lng           Float?    // uzunluq
+  status        String    @default("approved") // approved | pending | rejected
+  owner         User?     @relation(fields: [ownerId], references: [id])
+  ownerId       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  bookings      Booking[]
+  reviewList    Review[]
+
+  @@index([region])
+  @@index([status, createdAt])
+  @@index([ownerId])
+}
+
+model Booking {
+  id         String    @id @default(cuid())
+  listing    Listing   @relation(fields: [listingId], references: [id])
+  listingId  String
+  user       User?     @relation(fields: [userId], references: [id])
+  userId     String?
+  checkIn    DateTime
+  checkOut   DateTime
+  guests     Int
+  guestName  String
+  guestPhone String
+  total      Int
+  deposit    Int
+  code       String    @unique
+  status     String    @default("pending") // pending | confirmed | cancelled
+  expiresAt  DateTime? // pending rezervin tarix tutma müddəti (15 dəq)
+  paidAt     DateTime?
+  paymentRef String    @default("")
+  refundedAt DateTime?
+  refundRef  String    @default("")
+  createdAt  DateTime  @default(now())
+
+  @@index([listingId, checkIn])
+  @@index([guestPhone])
+  @@index([userId])
+  @@index([status, expiresAt])
+}
+
+// Rəy yalnız təsdiqlənmiş rezervasiya kodu ilə yazılır —
+// "yalnız qalan qonaqların rəyləri" vədinin texniki təminatı.
+model Review {
+  id          String   @id @default(cuid())
+  listing     Listing  @relation(fields: [listingId], references: [id])
+  listingId   String
+  bookingCode String   @unique
+  guestName   String
+  rating      Int
+  text        String
+  createdAt   DateTime @default(now())
+
+  @@index([listingId, createdAt])
+}
+
+// Telefon OTP kodları — yalnız canlı SMS rejimində istifadə olunur.
+model OtpCode {
+  id        String   @id @default(cuid())
+  phone     String
+  codeHash  String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+}

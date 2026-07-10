@@ -1,0 +1,20 @@
+node_modules
+.next
+out
+
+# Mühit dəyişənləri (nümunə istisna olmaqla)
+.env*
+!.env.example
+
+*.tsbuildinfo
+next-env.d.ts
+
+# SQLite (lokal DB)
+/prisma/*.db
+/prisma/*.db-journal
+
+# İstifadəçi yüklədiyi fayllar (lokal)
+/public/uploads
+
+.DS_Store
+.vercel

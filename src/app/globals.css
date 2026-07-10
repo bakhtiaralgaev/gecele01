@@ -1,0 +1,275 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-qum text-gece antialiased font-sans;
+}
+
+/* Standalone (App Store / Play wrapper) — notch/home-indicator təhlükəsiz sahəsi */
+@supports (padding: env(safe-area-inset-top)) {
+  header {
+    padding-top: env(safe-area-inset-top);
+  }
+  footer {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+:focus-visible {
+  outline: 3px solid #e31c5f;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ============ İlk giriş animasiyası ============ */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  animation: introCurtain 0.72s cubic-bezier(0.76, 0, 0.24, 1) 2s both;
+}
+/* Brendin arxasında incə radial işıq */
+.intro-overlay::before {
+  content: "";
+  position: absolute;
+  width: 62vmax;
+  height: 62vmax;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(227, 28, 95, 0.07) 0%,
+    rgba(227, 28, 95, 0) 68%
+  );
+  opacity: 0;
+  animation: introGlow 1.7s ease-out 0.15s both;
+}
+.intro-inner {
+  position: relative;
+  text-align: center;
+  animation: introLift 0.72s cubic-bezier(0.76, 0, 0.24, 1) 2s both;
+}
+.intro-word {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.intro-letter {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.5em);
+  filter: blur(12px);
+  animation: introRise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.intro-dot {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(-0.85em);
+  animation: introDrop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.intro-tagline {
+  opacity: 0;
+  letter-spacing: 0.2em;
+  transform: translateY(6px);
+  animation: introTagline 0.95s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.intro-bar {
+  position: absolute;
+  left: 50%;
+  bottom: -2.6rem;
+  transform: translateX(-50%);
+  width: 132px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(34, 34, 34, 0.1);
+  overflow: hidden;
+}
+.intro-bar-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 2px;
+  background: #e31c5f;
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation: introBar 1.7s cubic-bezier(0.65, 0, 0.35, 1) 0.2s both;
+}
+@keyframes introRise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+@keyframes introDrop {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes introTagline {
+  to {
+    opacity: 1;
+    letter-spacing: 0.05em;
+    transform: translateY(0);
+  }
+}
+@keyframes introBar {
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes introGlow {
+  35% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.55;
+  }
+}
+@keyframes introLift {
+  to {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+}
+@keyframes introCurtain {
+  to {
+    transform: translateY(-100%);
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ============ Xəritə markerləri (Leaflet) ============ */
+.gc-pin {
+  transform: translate(-50%, -50%);
+  background: #ffffff;
+  color: #e31c5f;
+  font-family: var(--font-sans), "Segoe UI", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: -0.01em;
+  padding: 4px 9px;
+  border-radius: 999px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+  border: 1.5px solid #e31c5f;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+.gc-pin:hover {
+  background: #e31c5f;
+  color: #ffffff;
+  transform: translate(-50%, -50%) scale(1.08);
+  z-index: 1000;
+}
+
+/* Marker clusteri — yaxın elanlar bir nişana yığılır (Airbnb üslubu) */
+.gc-cluster {
+  transform: translate(-50%, -50%);
+  min-width: 36px;
+  height: 36px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #e31c5f;
+  color: #ffffff;
+  font-family: var(--font-sans), "Segoe UI", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.gc-cluster:hover {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 0;
+}
+.leaflet-popup-content {
+  margin: 0;
+  width: 232px !important;
+}
+.gc-pop {
+  display: flex;
+  gap: 10px;
+  text-decoration: none;
+  color: #222222;
+}
+.gc-pop img {
+  width: 76px;
+  height: 76px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.gc-pop-b {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 9px 10px 9px 0;
+  min-width: 0;
+}
+.gc-pop-t {
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.25;
+}
+.gc-pop-m {
+  font-size: 12px;
+  color: #555555;
+  margin-top: 5px;
+}
+
+/* ============ Tarix seçici (react-day-picker) ============ */
+.gc-rdp {
+  font-size: 14px;
+}
+/* react-day-picker öz dəyişənlərini .rdp-root-da təyin edir — burada üstələyirik */
+.gc-rdp .rdp-root {
+  --rdp-accent-color: #e31c5f;
+  --rdp-accent-background-color: #ffe9f0;
+  --rdp-today-color: #e31c5f;
+  --rdp-range_middle-background-color: #ffe9f0;
+  --rdp-range_middle-color: #222222;
+  --rdp-range_start-color: #ffffff;
+  --rdp-range_end-color: #ffffff;
+  --rdp-selected-border: 2px solid #e31c5f;
+}
+.gc-rdp .rdp-chevron {
+  fill: #e31c5f;
+}
+.gc-rdp .rdp-day_button:hover {
+  background: #f7f7f7;
+}
+.gc-rdp .rdp-today:not(.rdp-selected) .rdp-day_button {
+  color: #e31c5f;
+  font-weight: 700;
+}
