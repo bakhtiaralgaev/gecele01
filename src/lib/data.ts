@@ -40,6 +40,12 @@ export interface ListingDto {
   lng?: number;
   bookedRanges?: { checkIn: string; checkOut: string }[];
   reviewList?: ReviewDto[];
+  // Sosial sübut / çevirmə siqnalları (yalnız elan səhifəsində gəlir)
+  previousPrice?: number | null;
+  isSuperhost?: boolean;
+  viewsLast24h?: number;
+  bookingsLast30d?: number;
+  lastBookedDaysAgo?: number | null;
 }
 
 export interface BookingDto {

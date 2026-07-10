@@ -1,3 +1,6 @@
+/* Client komponentində CSS importu Next dev-də HotReload xəbərdarlığı doğurur — burada yükləyirik */
+@import "react-day-picker/style.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -163,51 +166,51 @@ body {
 }
 
 /* ============ Xəritə markerləri (Leaflet) ============ */
-.gc-pin {
-  transform: translate(-50%, -50%);
-  background: #ffffff;
-  color: #e31c5f;
-  font-family: var(--font-sans), "Segoe UI", system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 12.5px;
-  letter-spacing: -0.01em;
-  padding: 4px 9px;
-  border-radius: 999px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
-  border: 1.5px solid #e31c5f;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, transform 0.15s;
-}
-.gc-pin:hover {
-  background: #e31c5f;
-  color: #ffffff;
-  transform: translate(-50%, -50%) scale(1.08);
-  z-index: 1000;
-}
-
-/* Marker clusteri — yaxın elanlar bir nişana yığılır (Airbnb üslubu) */
+/* Airbnb pill-i: ağ fon, tünd mətn, haşiyəsiz. Rəqəm dairəsi yoxdur —
+   qiymət pini ilə elan sayı bir-birinə qarışmasın deyə ikisi də pill-dir. */
+.gc-pin,
 .gc-cluster {
   transform: translate(-50%, -50%);
-  min-width: 36px;
-  height: 36px;
-  padding: 0 7px;
-  border-radius: 999px;
-  background: #e31c5f;
-  color: #ffffff;
-  font-family: var(--font-sans), "Segoe UI", system-ui, sans-serif;
-  font-weight: 800;
-  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #ffffff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+  /* Leaflet valideynə inline width:1px yazır — auto en 1px-ə yığılır,
+     mətn pill-dən daşırdı. Məzmuna görə ölçülür. */
+  width: max-content;
+  height: max-content;
+  background: #ffffff;
+  color: #222222;
+  font-family: var(--font-sans), "Segoe UI", system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  padding: 7px 10px;
+  border-radius: 999px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
   cursor: pointer;
-  transition: transform 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.15s;
 }
-.gc-cluster:hover {
-  transform: translate(-50%, -50%) scale(1.08);
+/* Fokus Leaflet-in .leaflet-marker-icon valideyninə düşür, pin div-inə yox */
+.gc-pin:hover,
+.gc-cluster:hover,
+.leaflet-marker-icon:focus-visible .gc-pin,
+.leaflet-marker-icon:focus-visible .gc-cluster {
+  background: #222222;
+  color: #ffffff;
+  transform: translate(-50%, -50%) scale(1.06);
+  z-index: 1000;
+}
+
+/* Cluster mətni "5 ev" — qiymətlə səhv salınmasın */
+.gc-cluster {
+  font-weight: 700;
 }
 .leaflet-popup-content-wrapper {
   border-radius: 12px;
@@ -249,11 +252,11 @@ body {
 }
 
 /* ============ Tarix seçici (react-day-picker) ============ */
-.gc-rdp {
+.gc-cal {
   font-size: 14px;
 }
 /* react-day-picker öz dəyişənlərini .rdp-root-da təyin edir — burada üstələyirik */
-.gc-rdp .rdp-root {
+.gc-cal .rdp-root {
   --rdp-accent-color: #e31c5f;
   --rdp-accent-background-color: #ffe9f0;
   --rdp-today-color: #e31c5f;
@@ -261,15 +264,105 @@ body {
   --rdp-range_middle-color: #222222;
   --rdp-range_start-color: #ffffff;
   --rdp-range_end-color: #ffffff;
-  --rdp-selected-border: 2px solid #e31c5f;
+  --rdp-selected-border: none;
+  --rdp-day-width: 46px;
+  --rdp-day-height: 46px;
+  --rdp-day_button-width: 44px;
+  --rdp-day_button-height: 44px;
+  --rdp-day_button-border-radius: 999px;
+  --rdp-nav_button-width: 40px;
+  --rdp-nav_button-height: 40px;
 }
-.gc-rdp .rdp-chevron {
-  fill: #e31c5f;
+
+/* İki ay yan-yana, Airbnb aralığı */
+.gc-cal .rdp-months {
+  gap: 40px;
 }
-.gc-rdp .rdp-day_button:hover {
+.gc-cal .rdp-month_caption {
+  justify-content: center;
+  height: 40px;
+}
+.gc-cal .rdp-caption_label {
+  font-weight: 700;
+  font-size: 16px;
+  color: #222222;
+  text-transform: capitalize;
+}
+.gc-cal .rdp-weekday {
+  font-size: 12px;
+  font-weight: 500;
+  color: #222222;
+  text-transform: none;
+}
+
+/* Naviqasiya — dairəvi, kənarlarda */
+.gc-cal .rdp-nav {
+  inset-inline: 0;
+}
+.gc-cal .rdp-button_previous,
+.gc-cal .rdp-button_next {
+  border-radius: 999px;
+  transition: background-color 0.15s;
+}
+.gc-cal .rdp-button_previous:hover,
+.gc-cal .rdp-button_next:hover {
   background: #f7f7f7;
 }
-.gc-rdp .rdp-today:not(.rdp-selected) .rdp-day_button {
-  color: #e31c5f;
+.gc-cal .rdp-chevron {
+  fill: #222222;
+}
+
+/* Günlər — dairəvi, seçim marka rəngi */
+.gc-cal .rdp-day_button {
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+.gc-cal .rdp-day_button:hover {
+  border-color: #222222;
+}
+.gc-cal .rdp-today:not(.rdp-selected) .rdp-day_button {
   font-weight: 700;
+}
+.gc-cal .rdp-range_start .rdp-day_button,
+.gc-cal .rdp-range_end .rdp-day_button {
+  background: #e31c5f;
+  color: #ffffff;
+  border-color: #e31c5f;
+}
+/* Aralıq — fasiləsiz zolaq, dairəvi deyil */
+.gc-cal .rdp-range_middle {
+  background: #ffe9f0;
+}
+.gc-cal .rdp-range_middle .rdp-day_button {
+  background: transparent;
+  color: #222222;
+  border-radius: 999px;
+}
+.gc-cal .rdp-range_start:not(.rdp-range_end) {
+  background: linear-gradient(90deg, transparent 50%, #ffe9f0 50%);
+}
+.gc-cal .rdp-range_end:not(.rdp-range_start) {
+  background: linear-gradient(90deg, #ffe9f0 50%, transparent 50%);
+}
+
+/* Keçmiş / dolu günlər — Airbnb-dəki kimi üstündən xətt */
+.gc-cal .rdp-disabled .rdp-day_button {
+  color: #dddddd;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+.gc-cal .rdp-disabled .rdp-day_button:hover {
+  border-color: transparent;
+}
+.gc-cal .rdp-outside {
+  visibility: hidden;
+}
+
+@media (max-width: 640px) {
+  .gc-cal .rdp-root {
+    --rdp-day-width: 40px;
+    --rdp-day-height: 40px;
+    --rdp-day_button-width: 38px;
+    --rdp-day_button-height: 38px;
+  }
 }

@@ -1,12 +1,83 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ListingDto, ReviewDto, calcTotal, DEPOSIT_RATE } from "@/lib/data";
-import { IconCheck, IconShield, IconStar } from "@/components/Icons";
+import { IconCheck, IconHeart, IconShield, IconStar } from "@/components/Icons";
 import DateRangePicker from "@/components/DateRangePicker";
+import GuestsPicker, {
+  guestsLabel,
+  totalGuests,
+  type GuestCounts,
+} from "@/components/GuestsPicker";
 import MapView from "@/components/MapView";
+import PhotoGallery from "@/components/PhotoGallery";
+
+const WISHLIST_KEY = "gecele_wishlist";
+
+function IconShare({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M12 3v13M12 3L8 7M12 3l4 4"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function IconEye({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+function IconTrend({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M3 17l6-6 4 4 8-8"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M15 7h6v6"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function readWishlist(): string[] {
+  try {
+    const v = JSON.parse(window.localStorage.getItem(WISHLIST_KEY) ?? "[]");
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
 
 function nightsBetween(checkIn: string, checkOut: string): number {
   if (!checkIn || !checkOut) return 0;
@@ -23,7 +94,18 @@ export default function ListingPage() {
 
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
-  const [guests, setGuests] = useState(2);
+  const [guestCounts, setGuestCounts] = useState<GuestCounts>({
+    adults: 2,
+    children: 0,
+    infants: 0,
+    pets: 0,
+  });
+  const [guestsOpen, setGuestsOpen] = useState(false);
+  const guestsRef = useRef<HTMLDivElement>(null);
+  const guests = totalGuests(guestCounts);
+  const [saved, setSaved] = useState(false);
+  const [shared, setShared] = useState(false);
+  const [regionLeft, setRegionLeft] = useState<number | null>(null);
   const [guestName, setGuestName] = useState("");
   const [guestPhone, setGuestPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -59,6 +141,9 @@ export default function ListingPage() {
         if (!cancelled) setNotFound(true);
       });
 
+    // Real baxış qeydi — "24 saatda N baxış" sosial sübutu üçün
+    fetch(`/api/listings/${params.id}/view`, { method: "POST" }).catch(() => {});
+
     // Hesabdan ad/telefon prefill
     fetch("/api/auth/me")
       .then((r) => r.json())
@@ -73,6 +158,51 @@ export default function ListingPage() {
       cancelled = true;
     };
   }, [params.id]);
+
+  useEffect(() => {
+    if (listing) setSaved(readWishlist().includes(listing.id));
+  }, [listing]);
+
+  // Qıtlıq siqnalı — seçilmiş tarixlərə bu bölgədə neçə ev boşdur (real say)
+  useEffect(() => {
+    if (!listing || !checkIn || !checkOut) {
+      setRegionLeft(null);
+      return;
+    }
+    let cancelled = false;
+    const p = new URLSearchParams({
+      region: listing.region,
+      checkIn,
+      checkOut,
+    });
+    fetch(`/api/listings?${p.toString()}`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: unknown[]) => {
+        if (!cancelled) setRegionLeft(Array.isArray(d) ? d.length : null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [listing, checkIn, checkOut]);
+
+  useEffect(() => {
+    if (!guestsOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (guestsRef.current && !guestsRef.current.contains(e.target as Node)) {
+        setGuestsOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setGuestsOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [guestsOpen]);
 
   if (notFound) {
     return (
@@ -109,6 +239,34 @@ export default function ListingPage() {
     guestName.trim().length >= 2 &&
     guestPhone.trim().length >= 9 &&
     !submitting;
+
+  const toggleSaved = () => {
+    const list = readWishlist();
+    const next = list.includes(listing.id)
+      ? list.filter((x) => x !== listing.id)
+      : [...list, listing.id];
+    window.localStorage.setItem(WISHLIST_KEY, JSON.stringify(next));
+    setSaved(next.includes(listing.id));
+  };
+
+  const share = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: listing.title, url });
+        return;
+      } catch {
+        // istifadəçi ləğv etdi — buferə kopyalamağa keçirik
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShared(true);
+      window.setTimeout(() => setShared(false), 2000);
+    } catch {
+      setErrorMsg("Linki kopyalamaq alınmadı");
+    }
+  };
 
   const reserve = async () => {
     if (!canBook) return;
@@ -184,49 +342,75 @@ export default function ListingPage() {
         <h1 className="font-serif font-bold text-2xl sm:text-[26px] text-gece tracking-tight">
           {listing.title}
         </h1>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gece">
-          {listing.reviews > 0 && (
-            <span className="flex items-center gap-1 font-semibold">
-              <IconStar className="w-3.5 h-3.5" />
-              {listing.rating.toFixed(1)}
-              <span className="text-gece/60 font-normal">
-                · {listing.reviews} rəy
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm text-gece">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {listing.reviews > 0 && (
+              <span className="flex items-center gap-1 font-semibold">
+                <IconStar className="w-3.5 h-3.5" />
+                {listing.rating.toFixed(1)}
+                <span className="text-gece/60 font-normal">
+                  · {listing.reviews} rəy
+                </span>
               </span>
-            </span>
-          )}
-          <span className="text-gece/60">
-            {listing.region}, Azərbaycan
-          </span>
+            )}
+            <span className="text-gece/60">{listing.region}, Azərbaycan</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={share}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg font-semibold underline hover:bg-kraft transition-colors"
+            >
+              <IconShare className="w-4 h-4" />
+              {shared ? "Kopyalandı" : "Paylaş"}
+            </button>
+            <button
+              onClick={toggleSaved}
+              aria-pressed={saved}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg font-semibold underline hover:bg-kraft transition-colors"
+            >
+              <IconHeart filled={saved} className="w-4 h-4" />
+              {saved ? "Saxlanıldı" : "Saxla"}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Qalereya */}
-      <div className="mt-4 hidden sm:grid grid-cols-4 grid-rows-2 gap-2 h-[420px] rounded-2xl overflow-hidden">
-        {/* eslint-disable @next/next/no-img-element */}
-        <img
-          src={photos[0]}
-          alt={listing.title}
-          className="col-span-2 row-span-2 w-full h-full object-cover"
-        />
-        <img
-          src={photos[1] ?? photos[0]}
-          alt=""
-          className="col-span-2 row-span-1 w-full h-full object-cover"
-        />
-        <img
-          src={photos[2] ?? photos[0]}
-          alt=""
-          className="col-span-2 row-span-1 w-full h-full object-cover"
-        />
-      </div>
-      <div className="mt-4 sm:hidden rounded-2xl overflow-hidden h-64">
-        <img
-          src={photos[0]}
-          alt={listing.title}
-          className="w-full h-full object-cover"
-        />
-      </div>
-      {/* eslint-enable @next/next/no-img-element */}
+      {/* Sosial sübut zolağı — yalnız real, sıfırdan böyük rəqəmlər */}
+      {(listing.isSuperhost ||
+        (listing.viewsLast24h ?? 0) >= 3 ||
+        (listing.bookingsLast30d ?? 0) > 0 ||
+        listing.lastBookedDaysAgo != null) && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+          {listing.isSuperhost && (
+            <span className="flex items-center gap-1.5 font-semibold text-gece">
+              <IconStar className="w-4 h-4 text-nar" />
+              Super ev sahibi
+            </span>
+          )}
+          {(listing.viewsLast24h ?? 0) >= 3 && (
+            <span className="flex items-center gap-1.5 text-gece/70">
+              <IconEye className="w-4 h-4 text-gece/50" />
+              Son 24 saatda <b className="text-gece">{listing.viewsLast24h}</b> baxış
+            </span>
+          )}
+          {(listing.bookingsLast30d ?? 0) > 0 && (
+            <span className="flex items-center gap-1.5 text-gece/70">
+              <IconTrend className="w-4 h-4 text-mese" />
+              Bu ay <b className="text-gece">{listing.bookingsLast30d}</b> dəfə rezerv olundu
+            </span>
+          )}
+          {listing.lastBookedDaysAgo != null && (
+            <span className="text-gece/60">
+              {listing.lastBookedDaysAgo === 0
+                ? "Bu gün rezerv olundu"
+                : `${listing.lastBookedDaysAgo} gün əvvəl rezerv olundu`}
+            </span>
+          )}
+        </div>
+      )}
+
+      <PhotoGallery photos={photos} title={listing.title} />
+
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Sol */}
@@ -308,9 +492,9 @@ export default function ListingPage() {
                 Dolu tarixlər
               </h2>
               <div className="mt-2 flex flex-wrap gap-2">
-                {listing.bookedRanges.map((r) => (
+                {listing.bookedRanges.map((r, i) => (
                   <span
-                    key={r.checkIn}
+                    key={`${r.checkIn}-${r.checkOut}-${i}`}
                     className="border border-gece/15 text-gece/60 text-xs font-semibold px-3 py-1.5 rounded-full line-through"
                   >
                     {r.checkIn} → {r.checkOut}
@@ -443,10 +627,22 @@ export default function ListingPage() {
         {/* Sağ — rezervasiya paneli */}
         <div className="lg:sticky lg:top-24 h-fit">
           <div className="border border-gece/15 rounded-2xl shadow-lift p-6">
-            <p className="text-[22px] text-gece">
-              <span className="font-bold">{listing.pricePerNight} ₼</span>
-              <span className="text-gece/60 text-base"> gecə</span>
-            </p>
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <p className="text-[22px] text-gece">
+                {listing.previousPrice ? (
+                  <span className="text-gece/40 line-through font-medium text-lg mr-1.5">
+                    {listing.previousPrice} ₼
+                  </span>
+                ) : null}
+                <span className="font-bold">{listing.pricePerNight} ₼</span>
+                <span className="text-gece/60 text-base"> gecə</span>
+              </p>
+              {listing.previousPrice ? (
+                <span className="bg-nar-soft text-nar text-xs font-bold px-2 py-1 rounded-full">
+                  Qiymət düşdü
+                </span>
+              ) : null}
+            </div>
 
             <div className="mt-4 border border-gece/20 rounded-xl overflow-hidden">
               <DateRangePicker
@@ -457,20 +653,40 @@ export default function ListingPage() {
                   setCheckOut(co);
                 }}
               />
-              <label className="block p-3 border-t border-gece/20">
-                <span className="block text-[10px] font-bold uppercase text-gece">
-                  Qonaq (maks {listing.maxGuests})
-                </span>
-                <input
-                  type="number"
-                  min={1}
-                  max={listing.maxGuests}
-                  value={guests}
-                  onChange={(e) => setGuests(Number(e.target.value))}
-                  className="w-full text-sm outline-none mt-0.5"
-                />
-              </label>
+              <div ref={guestsRef} className="relative border-t border-gece/20">
+                <button
+                  type="button"
+                  onClick={() => setGuestsOpen((o) => !o)}
+                  aria-expanded={guestsOpen}
+                  className="w-full text-left p-3"
+                >
+                  <span className="block text-[10px] font-bold uppercase text-gece">
+                    Qonaq
+                  </span>
+                  <span className="block text-sm text-gece/70 truncate mt-0.5">
+                    {guestsLabel(guestCounts) || "Qonaq əlavə edin"}
+                  </span>
+                </button>
+                {guestsOpen && (
+                  <div className="absolute z-30 left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-lift border border-gece/10 p-5">
+                    <GuestsPicker
+                      value={guestCounts}
+                      onChange={setGuestCounts}
+                      maxGuests={listing.maxGuests}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Qıtlıq siqnalı — real say, yalnız az qalanda göstərilir */}
+            {regionLeft != null && regionLeft > 0 && regionLeft <= 4 && (
+              <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-nar bg-nar-soft rounded-lg px-3 py-2.5">
+                <IconEye className="w-4 h-4 shrink-0" />
+                {listing.region}də bu tarixlərə cəmi {regionLeft} ev boşdur —
+                tez dolur
+              </p>
+            )}
 
             <div className="mt-3 space-y-2">
               <input

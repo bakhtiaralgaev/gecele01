@@ -37,6 +37,7 @@ export default function Home() {
     checkIn: "",
     checkOut: "",
     guests: 0,
+    flex: 0,
   });
   const [poolOnly, setPoolOnly] = useState(false);
   const [showMap, setShowMap] = useState(false);
@@ -51,6 +52,7 @@ export default function Home() {
     if (query.checkIn && query.checkOut) {
       params.set("checkIn", query.checkIn);
       params.set("checkOut", query.checkOut);
+      if (query.flex > 0) params.set("flex", String(query.flex));
     }
     let cancelled = false;
     setListings(null);

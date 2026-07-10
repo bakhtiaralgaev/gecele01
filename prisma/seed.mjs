@@ -255,10 +255,10 @@ const seedReviews = [
 async function main() {
   for (let i = 0; i < listings.length; i++) {
     const l = listings[i];
+    // Airbnb qalereyası 5 şəkil göstərir: 1 böyük + 2×2 kiçik
     const photos = JSON.stringify([
       l.photo,
-      INTERIORS[i % INTERIORS.length],
-      INTERIORS[(i + 2) % INTERIORS.length],
+      ...[1, 2, 3, 4].map((k) => INTERIORS[(i + k) % INTERIORS.length]),
     ]);
     const [clat, clng] = CENTERS[l.region] ?? [40.4, 49.8];
     const lat = clat + (((i % 5) - 2) * 0.02);

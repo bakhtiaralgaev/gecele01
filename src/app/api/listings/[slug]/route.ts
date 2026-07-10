@@ -30,6 +30,36 @@ export async function GET(
     return NextResponse.json({ error: "Elan tapılmadı" }, { status: 404 });
   }
 
+  // Sosial sübut rəqəmləri — hamısı real datadan (store-safe, uydurma yoxdur).
+  const now = Date.now();
+  const [viewsLast24h, bookingsLast30d, lastBooking] = await Promise.all([
+    prisma.listingView.count({
+      where: {
+        listingId: listing.id,
+        createdAt: { gt: new Date(now - 24 * 60 * 60 * 1000) },
+      },
+    }),
+    prisma.booking.count({
+      where: {
+        listingId: listing.id,
+        status: { in: ["confirmed", "pending"] },
+        createdAt: { gt: new Date(now - 30 * 24 * 60 * 60 * 1000) },
+      },
+    }),
+    prisma.booking.findFirst({
+      where: { listingId: listing.id, status: "confirmed" },
+      orderBy: { createdAt: "desc" },
+      select: { createdAt: true },
+    }),
+  ]);
+
+  const isSuperhost = listing.rating >= 4.8 && listing.reviews >= 10;
+  const lastBookedDaysAgo = lastBooking
+    ? Math.floor((now - lastBooking.createdAt.getTime()) / (24 * 60 * 60 * 1000))
+    : null;
+  const priceDropped =
+    listing.previousPrice != null && listing.previousPrice > listing.pricePerNight;
+
   let photos: string[] = [];
   try {
     photos = JSON.parse(listing.photos);
@@ -53,6 +83,11 @@ export async function GET(
     region: listing.region,
     type: listing.type,
     pricePerNight: listing.pricePerNight,
+    previousPrice: priceDropped ? listing.previousPrice : null,
+    isSuperhost,
+    viewsLast24h,
+    bookingsLast30d,
+    lastBookedDaysAgo,
     rating: listing.rating,
     reviews: listing.reviews,
     maxGuests: listing.maxGuests,

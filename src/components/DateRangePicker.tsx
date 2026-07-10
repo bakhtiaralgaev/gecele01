@@ -1,24 +1,8 @@
 "use client";
 
-import "react-day-picker/style.css";
 import { useEffect, useRef, useState } from "react";
-import { DayPicker, type DateRange } from "react-day-picker";
-import { az } from "date-fns/locale";
-
-function toStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate()
-  ).padStart(2, "0")}`;
-}
-function fromStr(s: string): Date | undefined {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return undefined;
-  const [y, m, d] = s.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
-function fmt(s: string): string {
-  const d = fromStr(s);
-  return d ? d.toLocaleDateString("az", { day: "numeric", month: "short" }) : "";
-}
+import { formatDayShort } from "@/lib/dates";
+import CalendarPanel from "./CalendarPanel";
 
 export default function DateRangePicker({
   checkIn,
@@ -30,30 +14,40 @@ export default function DateRangePicker({
   onChange: (checkIn: string, checkOut: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [months, setMonths] = useState(1);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const close = (e: MouseEvent) => {
+    const sync = () => setMonths(window.innerWidth >= 640 ? 2 : 1);
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, []);
-
-  const from = fromStr(checkIn);
-  const to = fromStr(checkOut);
-  const selected: DateRange | undefined = from ? { from, to } : undefined;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
     <div ref={wrapRef} className="relative">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
         className="w-full grid grid-cols-2 text-left"
       >
         <span className="px-3 py-2.5 min-w-0">
@@ -61,7 +55,7 @@ export default function DateRangePicker({
             Giriş
           </span>
           <span className="block text-sm text-gece/70 truncate">
-            {checkIn ? fmt(checkIn) : "Tarix seç"}
+            {checkIn ? formatDayShort(checkIn) : "Tarix seç"}
           </span>
         </span>
         <span className="px-3 py-2.5 min-w-0 border-l border-gece/15">
@@ -69,28 +63,41 @@ export default function DateRangePicker({
             Çıxış
           </span>
           <span className="block text-sm text-gece/70 truncate">
-            {checkOut ? fmt(checkOut) : "Tarix seç"}
+            {checkOut ? formatDayShort(checkOut) : "Tarix seç"}
           </span>
         </span>
       </button>
 
       {open && (
-        <div className="gc-rdp absolute z-30 mt-2 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-lift border border-gece/10 p-3">
-          <DayPicker
-            mode="range"
-            locale={az}
-            selected={selected}
-            onSelect={(range) => {
-              const ci = range?.from ? toStr(range.from) : "";
-              const co = range?.to ? toStr(range.to) : "";
+        <div className="absolute z-30 mt-2 right-0 bg-white rounded-3xl shadow-lift border border-gece/10 p-5">
+          <CalendarPanel
+            compact
+            months={months}
+            checkIn={checkIn}
+            checkOut={checkOut}
+            flex={0}
+            onFlexChange={() => {}}
+            onChange={(ci, co) => {
               onChange(ci, co);
-              if (range?.from && range?.to) setOpen(false);
+              if (ci && co) setOpen(false);
             }}
-            disabled={{ before: today }}
-            numberOfMonths={
-              typeof window !== "undefined" && window.innerWidth >= 640 ? 2 : 1
-            }
           />
+          <div className="mt-4 pt-3 border-t border-gece/10 flex justify-end gap-4">
+            <button
+              type="button"
+              onClick={() => onChange("", "")}
+              className="text-sm font-semibold text-gece underline"
+            >
+              Tarixləri sil
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-sm font-semibold text-gece underline"
+            >
+              Bağla
+            </button>
+          </div>
         </div>
       )}
     </div>

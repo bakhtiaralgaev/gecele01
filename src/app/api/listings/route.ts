@@ -31,6 +31,7 @@ function toDto(l: {
   photo: string;
   lat: number | null;
   lng: number | null;
+  previousPrice: number | null;
 }) {
   const [lat, lng] =
     l.lat != null && l.lng != null ? [l.lat, l.lng] : coordsFor(l.region, l.id);
@@ -41,6 +42,10 @@ function toDto(l: {
     region: l.region,
     type: l.type,
     pricePerNight: l.pricePerNight,
+    previousPrice:
+      l.previousPrice != null && l.previousPrice > l.pricePerNight
+        ? l.previousPrice
+        : null,
     rating: l.rating,
     reviews: l.reviews,
     maxGuests: l.maxGuests,
@@ -54,6 +59,25 @@ function toDto(l: {
   };
 }
 
+const DAY_MS = 86_400_000;
+const MAX_FLEX = 14;
+
+/** Verilmiş pəncərədə heç bir canlı rezervasiya ilə kəsişməyən elanlar. */
+function freeBetween(checkIn: Date, checkOut: Date, now: Date) {
+  return {
+    bookings: {
+      none: {
+        checkIn: { lt: checkOut },
+        checkOut: { gt: checkIn },
+        OR: [
+          { status: "confirmed" },
+          { status: "pending", expiresAt: { gt: now } },
+        ],
+      },
+    },
+  };
+}
+
 // Axtarış: region, hovuz, qonaq sayı və tarix əlçatanlığı üzrə filtr
 export async function GET(req: NextRequest) {
   const p = req.nextUrl.searchParams;
@@ -62,6 +86,10 @@ export async function GET(req: NextRequest) {
   const guests = Number(p.get("guests") ?? 0);
   const checkInStr = p.get("checkIn");
   const checkOutStr = p.get("checkOut");
+  const flexRaw = Math.trunc(Number(p.get("flex") ?? 0));
+  const flex = Number.isFinite(flexRaw)
+    ? Math.min(MAX_FLEX, Math.max(0, flexRaw))
+    : 0;
 
   let availability = {};
   if (
@@ -72,19 +100,19 @@ export async function GET(req: NextRequest) {
   ) {
     const checkIn = new Date(`${checkInStr}T12:00:00Z`);
     const checkOut = new Date(`${checkOutStr}T12:00:00Z`);
+    const now = new Date();
     if (checkOut > checkIn) {
-      availability = {
-        bookings: {
-          none: {
-            checkIn: { lt: checkOut },
-            checkOut: { gt: checkIn },
-            OR: [
-              { status: "confirmed" },
-              { status: "pending", expiresAt: { gt: new Date() } },
-            ],
-          },
-        },
-      };
+      // ±flex: gecə sayı sabit qalır, pəncərə sürüşür. Ən azı biri boşdursa uyğundur.
+      const windows = [];
+      for (let k = -flex; k <= flex; k++) {
+        const from = new Date(checkIn.getTime() + k * DAY_MS);
+        const to = new Date(checkOut.getTime() + k * DAY_MS);
+        if (from < now) continue; // keçmişə sürüşən pəncərə mənasızdır
+        windows.push(freeBetween(from, to, now));
+      }
+      // Bütün pəncərələr keçmişdədirsə filtri səssizcə atmırıq — dəqiq pəncərə qalır.
+      if (windows.length === 0) windows.push(freeBetween(checkIn, checkOut, now));
+      availability = windows.length === 1 ? windows[0] : { OR: windows };
     }
   }
 

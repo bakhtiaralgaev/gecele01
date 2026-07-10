@@ -50,10 +50,16 @@ export default function ListingCard({ listing }: { listing: ListingDto }) {
         >
           <IconHeart filled={liked} className="w-6 h-6 drop-shadow" />
         </button>
-        {listing.pool && (
-          <span className="absolute top-3 left-3 bg-white/95 text-gece text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
-            Hovuzlu
+        {listing.rating >= 4.8 && listing.reviews >= 10 ? (
+          <span className="absolute top-3 left-3 bg-white/95 text-gece text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
+            Super ev sahibi
           </span>
+        ) : (
+          listing.pool && (
+            <span className="absolute top-3 left-3 bg-white/95 text-gece text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
+              Hovuzlu
+            </span>
+          )
         )}
       </div>
 
@@ -78,6 +84,11 @@ export default function ListingCard({ listing }: { listing: ListingDto }) {
           otağı
         </p>
         <p className="mt-1 text-[15px] text-gece">
+          {listing.previousPrice ? (
+            <span className="text-gece/40 line-through mr-1.5">
+              {listing.previousPrice} ₼
+            </span>
+          ) : null}
           <span className="font-semibold">{listing.pricePerNight} ₼</span>{" "}
           <span className="text-gece/60">gecə</span>
         </p>

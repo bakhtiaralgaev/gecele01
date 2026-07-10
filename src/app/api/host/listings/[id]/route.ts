@@ -32,7 +32,12 @@ export async function PATCH(
     // boş gövdə
   }
 
-  const data: { pricePerNight?: number; status?: string } = {};
+  const data: {
+    pricePerNight?: number;
+    status?: string;
+    previousPrice?: number | null;
+    priceUpdatedAt?: Date;
+  } = {};
 
   if (body.pricePerNight !== undefined) {
     const p = Number(body.pricePerNight);
@@ -42,7 +47,14 @@ export async function PATCH(
         { status: 400 }
       );
     }
-    data.pricePerNight = Math.round(p);
+    const newPrice = Math.round(p);
+    if (newPrice !== listing.pricePerNight) {
+      data.pricePerNight = newPrice;
+      data.priceUpdatedAt = new Date();
+      // Qiymət DÜŞSÜR: köhnə qiyməti "üstündən xətt" nişanı üçün saxla.
+      // QALXIR: köhnəni təmizlə ki, saxta "endirim" görünməsin.
+      data.previousPrice = newPrice < listing.pricePerNight ? listing.pricePerNight : null;
+    }
   }
 
   if (body.action === "pause" && listing.status === "approved") {

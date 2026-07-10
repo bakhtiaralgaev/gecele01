@@ -42,6 +42,8 @@ model Listing {
   photos        String    @default("[]") // JSON massiv — qalereya
   lat           Float?    // enlik — xəritə üçün
   lng           Float?    // uzunluq
+  previousPrice Int?      // əvvəlki qiymət — "qiymət düşdü" nişanı üçün
+  priceUpdatedAt DateTime? // qiymət ən son nə vaxt dəyişdi
   status        String    @default("approved") // approved | pending | rejected
   owner         User?     @relation(fields: [ownerId], references: [id])
   ownerId       String?
@@ -49,10 +51,23 @@ model Listing {
   updatedAt     DateTime  @updatedAt
   bookings      Booking[]
   reviewList    Review[]
+  views         ListingView[]
 
   @@index([region])
   @@index([status, createdAt])
   @@index([ownerId])
+}
+
+// Elan baxışları — real "24 saatda N baxış" sosial sübutu üçün.
+// viewerId ilə təkrar baxışlar 6 saat pəncərədə birləşdirilir.
+model ListingView {
+  id        String   @id @default(cuid())
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  listingId String
+  viewerId  String
+  createdAt DateTime @default(now())
+
+  @@index([listingId, createdAt])
 }
 
 model Booking {
@@ -75,6 +90,7 @@ model Booking {
   paymentRef String    @default("")
   refundedAt DateTime?
   refundRef  String    @default("")
+  recoveryNotifiedAt DateTime? // tərk edilmiş rezerv xatırlatması göndərilib
   createdAt  DateTime  @default(now())
 
   @@index([listingId, checkIn])

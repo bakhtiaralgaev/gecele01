@@ -3,7 +3,10 @@
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import { useEffect, useRef } from "react";
-import type { Map as LeafletMap, LayerGroup } from "leaflet";
+import type { Map as LeafletMap, LayerGroup, Marker } from "leaflet";
+
+/** Cluster nişanı rayon adını yaza bilsin deyə markerə bölgəni yapışdırırıq. */
+type MarkerWithRegion = Marker & { gcRegion?: string };
 
 export interface MapPoint {
   id: string;
@@ -62,7 +65,7 @@ export default function MapView({
         });
         // Açıq, minimal bazaxəritə (Airbnb üslubu) — açar tələb etmir
         L.tileLayer(
-          "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+          "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
           {
             subdomains: "abcd",
             maxZoom: 20,
@@ -76,15 +79,31 @@ export default function MapView({
             ? L.markerClusterGroup({
                 showCoverageOnHover: false,
                 spiderfyOnMaxZoom: true,
-                maxClusterRadius: 48,
+                // Radius pill-in enindən (≈60px) böyük olmalıdır, yoxsa qonşu
+                // qiymət pinləri həndəsi olaraq üst-üstə düşür.
+                maxClusterRadius: 70,
                 disableClusteringAtZoom: 13,
                 chunkedLoading: true,
-                iconCreateFunction: (cluster) =>
-                  L.divIcon({
-                    html: `<div class="gc-cluster">${cluster.getChildCount()}</div>`,
+                iconCreateFunction: (cluster) => {
+                  const n = cluster.getChildCount();
+                  // Cluster bir rayona düşürsə adını yazırıq — bazaxəritə
+                  // ölkə miqyasında rayon adlarını göstərmir.
+                  const regions: string[] = [];
+                  for (const m of cluster.getAllChildMarkers()) {
+                    const r = (m as MarkerWithRegion).gcRegion;
+                    if (r && regions.indexOf(r) === -1) regions.push(r);
+                  }
+                  // "5" tək başına qiymət kimi oxunur — "5 ev" yazırıq
+                  const label =
+                    regions.length === 1
+                      ? `${esc(regions[0])} · ${n} ev`
+                      : `${n} ev`;
+                  return L.divIcon({
+                    html: `<div class="gc-cluster" title="${n} elan — böyütmək üçün klikləyin">${label}</div>`,
                     className: "",
                     iconSize: [1, 1],
-                  }),
+                  });
+                },
               }).addTo(mapRef.current)
             : L.layerGroup().addTo(mapRef.current);
       }
@@ -110,10 +129,12 @@ export default function MapView({
           const price = esc(String(p.pricePerNight));
           const icon = L.divIcon({
             className: "",
-            html: `<div class="gc-pin">${price} ₼</div>`,
+            html: `<div class="gc-pin" title="${esc(p.title)} — ${price} ₼ / gecə">${price} ₼</div>`,
             iconSize: [1, 1],
           });
-          const marker = L.marker([p.lat, p.lng], { icon }).addTo(group);
+          const marker: MarkerWithRegion = L.marker([p.lat, p.lng], { icon });
+          marker.gcRegion = p.region;
+          marker.addTo(group);
           const badge = p.reviews > 0 ? `★ ${p.rating.toFixed(1)}` : "Yeni";
           const img = safeImageUrl(p.photo);
           marker.bindPopup(

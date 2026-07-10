@@ -98,3 +98,29 @@ export async function notifyBookingConfirmed(b: BookingNotice): Promise<void> {
     );
   }
 }
+
+// Tərk edilmiş rezerv xatırlatması — ödənişə çatıb getmiş qonağa SMS.
+// İtən rezervasiyaların bir hissəsini geri qaytarır (marketplace pleybuku).
+export async function notifyAbandonedBooking(a: {
+  guestPhone: string;
+  guestEmail?: string | null;
+  title: string;
+  region: string;
+  bookingUrl: string;
+}): Promise<void> {
+  const msg =
+    `Gecələ: ${a.region}dakı "${a.title}" hələ sizi gözləyir. ` +
+    `Behinizi verib tarixi qəbul edin — Beh Qoruması ilə pulunuz təhlükəsizdir.`;
+  await sendSms(a.guestPhone, msg);
+  if (a.guestEmail) {
+    await sendEmail(
+      a.guestEmail,
+      `${a.title} hələ sizi gözləyir`,
+      `<h2>Rezervasiyanızı tamamlayın</h2>` +
+        `<p>${a.title}, ${a.region} üçün seçdiyiniz tarixlər hələ boşdur.</p>` +
+        `<p>Beh Qoruması ilə behiniz ev sahibinə deyil, platformada qalır — ` +
+        `risk yoxdur.</p>` +
+        `<p><a href="${a.bookingUrl}">Rezervasiyanı tamamla →</a></p>`
+    );
+  }
+}
