@@ -76,6 +76,11 @@ export default function Home() {
 
   return (
     <main>
+      {/* Sənəd iyerarxiyası üçün başlıq — vizual hero axtarış panelidir */}
+      <h1 className="sr-only">
+        Gecələ — Azərbaycanda istirahət evləri, bağ evləri və villalar
+      </h1>
+
       {/* Axtarış */}
       <section className="px-4 pt-5 pb-2 border-b border-gece/10">
         <SearchPill
