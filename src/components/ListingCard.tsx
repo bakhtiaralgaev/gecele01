@@ -46,7 +46,7 @@ export default function ListingCard({ listing }: { listing: ListingDto }) {
         <button
           onClick={toggleLike}
           aria-label={liked ? "Seçilmişlərdən çıxar" : "Seçilmişlərə əlavə et"}
-          className="absolute top-3 right-3 hover:scale-110 transition-transform"
+          className="absolute top-0.5 right-0.5 p-2.5 hover:scale-110 transition-transform"
         >
           <IconHeart filled={liked} className="w-6 h-6 drop-shadow" />
         </button>
