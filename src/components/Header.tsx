@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { IconUser, IconHeart } from "./Icons";
+import { IconUser, IconHeart, IconSpeaker, IconSpeakerOff } from "./Icons";
+import { isMuted, playSound, setMuted } from "@/lib/sound";
 
 interface Me {
   id: string;
@@ -13,6 +14,7 @@ interface Me {
 export default function Header() {
   const [me, setMe] = useState<Me | null | undefined>(undefined);
   const [open, setOpen] = useState(false);
+  const [muted, setMutedState] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -20,6 +22,10 @@ export default function Header() {
       .then((r) => r.json())
       .then((d) => setMe(d.user))
       .catch(() => setMe(null));
+  }, []);
+
+  useEffect(() => {
+    setMutedState(isMuted());
   }, []);
 
   useEffect(() => {
@@ -35,6 +41,13 @@ export default function Header() {
   const logout = async () => {
     await fetch("/api/auth/me", { method: "DELETE" });
     window.location.href = "/";
+  };
+
+  const toggleSound = () => {
+    const nextMuted = !muted;
+    setMuted(nextMuted);
+    setMutedState(nextMuted);
+    if (!nextMuted) playSound("tick");
   };
 
   // App Store 5.1.1(v) / Play: hesabın tətbiq daxilində silinməsi
@@ -75,6 +88,16 @@ export default function Header() {
           >
             <IconHeart className="w-5 h-5" />
           </Link>
+
+          <button
+            type="button"
+            onClick={toggleSound}
+            aria-label={muted ? "Səsləri aktivləşdir" : "Səsləri söndür"}
+            aria-pressed={muted}
+            className="flex items-center justify-center w-10 h-10 text-gece hover:bg-kraft rounded-full transition-colors"
+          >
+            {muted ? <IconSpeakerOff className="w-5 h-5" /> : <IconSpeaker className="w-5 h-5" />}
+          </button>
 
           {me === undefined ? (
             <div className="w-24 h-10 bg-kraft rounded-full animate-pulse" />

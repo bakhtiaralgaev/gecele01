@@ -1,18 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { IconApple, IconGoogle } from "@/components/Icons";
+import { useToast } from "@/components/Toast";
 
 type Role = "guest" | "host";
 type Method = "phone" | "email";
 type EmailMode = "login" | "register";
 
 export default function LoginPage() {
+  const { toast } = useToast();
   const [role, setRole] = useState<Role>("guest");
   const [method, setMethod] = useState<Method>("phone");
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    if (errorMsg) toast({ type: "error", message: errorMsg });
+  }, [errorMsg, toast]);
 
   // Telefon axını
   const [phone, setPhone] = useState("");

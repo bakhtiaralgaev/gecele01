@@ -127,6 +127,46 @@ export function IconCheck({ className }: IconProps) {
   );
 }
 
+export function IconInfo({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className ?? "w-5 h-5"}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 10.5v5" />
+      <path d="M12 7.5h.01" />
+    </svg>
+  );
+}
+
+export function IconAlert({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className ?? "w-5 h-5"}>
+      <path d="M10.3 4.5 3.7 17a2 2 0 0 0 1.8 3h13a2 2 0 0 0 1.8-3L13.7 4.5a2 2 0 0 0-3.4 0Z" />
+      <path d="M12 9v4.5" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
+export function IconSpeaker({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className ?? "w-5 h-5"}>
+      <path d="M4 10v4h4l5 4V6L8 10H4Z" />
+      <path d="M16 9a4 4 0 0 1 0 6" />
+      <path d="M18.5 6.5a7.5 7.5 0 0 1 0 11" />
+    </svg>
+  );
+}
+
+export function IconSpeakerOff({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className ?? "w-5 h-5"}>
+      <path d="M4 10v4h4l5 4V6L8 10H4Z" />
+      <path d="m17 10 4 4" />
+      <path d="m21 10-4 4" />
+    </svg>
+  );
+}
+
 export function IconApple({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className ?? "w-5 h-5"}>

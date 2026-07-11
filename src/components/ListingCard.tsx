@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ListingDto } from "@/lib/data";
 import { IconHeart, IconStar } from "./Icons";
+import { useToast } from "./Toast";
 
 const WISHLIST_KEY = "gecele_wishlist";
 
@@ -17,6 +18,8 @@ function readWishlist(): string[] {
 
 export default function ListingCard({ listing }: { listing: ListingDto }) {
   const [liked, setLiked] = useState(false);
+  const [heartPop, setHeartPop] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setLiked(readWishlist().includes(listing.id));
@@ -30,7 +33,15 @@ export default function ListingCard({ listing }: { listing: ListingDto }) {
       ? list.filter((x) => x !== listing.id)
       : [...list, listing.id];
     window.localStorage.setItem(WISHLIST_KEY, JSON.stringify(next));
-    setLiked(next.includes(listing.id));
+    const isNowLiked = next.includes(listing.id);
+    setLiked(isNowLiked);
+    setHeartPop(true);
+    window.setTimeout(() => setHeartPop(false), 280);
+    toast(
+      isNowLiked
+        ? { type: "success", message: "Seçilmişlərə əlavə edildi", sound: "like" }
+        : { type: "info", message: "Seçilmişlərdən çıxarıldı" }
+    );
   };
 
   return (
@@ -48,7 +59,7 @@ export default function ListingCard({ listing }: { listing: ListingDto }) {
           aria-label={liked ? "Seçilmişlərdən çıxar" : "Seçilmişlərə əlavə et"}
           className="absolute top-0.5 right-0.5 p-2.5 hover:scale-110 transition-transform"
         >
-          <IconHeart filled={liked} className="w-6 h-6 drop-shadow" />
+          <IconHeart filled={liked} className={`w-6 h-6 drop-shadow ${heartPop ? "gecele-heart-pop" : ""}`} />
         </button>
         {listing.rating >= 4.8 && listing.reviews >= 10 ? (
           <span className="absolute top-3 left-3 bg-white/95 text-gece text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">

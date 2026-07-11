@@ -165,6 +165,43 @@ body {
   }
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .gecele-toast {
+    animation: geceleToastIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .gecele-toast-leaving {
+    animation: geceleToastOut 0.18s ease-in both;
+  }
+
+  .gecele-heart-pop {
+    animation: geceleHeartPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .gecele-confirmation-reveal {
+    animation: geceleConfirmationReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes geceleToastIn {
+    from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes geceleToastOut {
+    to { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  }
+
+  @keyframes geceleHeartPop {
+    50% { transform: scale(1.22); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes geceleConfirmationReveal {
+    from { opacity: 0; transform: translateY(8px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+}
+
 /* ============ Xəritə markerləri (Leaflet) ============ */
 /* Airbnb pill-i: ağ fon, tünd mətn, haşiyəsiz. Rəqəm dairəsi yoxdur —
    qiymət pini ilə elan sayı bir-birinə qarışmasın deyə ikisi də pill-dir. */

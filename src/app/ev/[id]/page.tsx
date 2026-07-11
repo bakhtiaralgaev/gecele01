@@ -13,6 +13,7 @@ import GuestsPicker, {
 } from "@/components/GuestsPicker";
 import MapView from "@/components/MapView";
 import PhotoGallery from "@/components/PhotoGallery";
+import { useToast } from "@/components/Toast";
 
 const WISHLIST_KEY = "gecele_wishlist";
 
@@ -88,6 +89,7 @@ function nightsBetween(checkIn: string, checkOut: string): number {
 
 export default function ListingPage() {
   const params = useParams<{ id: string }>();
+  const { toast } = useToast();
   const [listing, setListing] = useState<ListingDto | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [reviews, setReviews] = useState<ReviewDto[]>([]);
@@ -104,6 +106,7 @@ export default function ListingPage() {
   const guestsRef = useRef<HTMLDivElement>(null);
   const guests = totalGuests(guestCounts);
   const [saved, setSaved] = useState(false);
+  const [savedPop, setSavedPop] = useState(false);
   const [shared, setShared] = useState(false);
   const [regionLeft, setRegionLeft] = useState<number | null>(null);
   const [guestName, setGuestName] = useState("");
@@ -246,7 +249,15 @@ export default function ListingPage() {
       ? list.filter((x) => x !== listing.id)
       : [...list, listing.id];
     window.localStorage.setItem(WISHLIST_KEY, JSON.stringify(next));
-    setSaved(next.includes(listing.id));
+    const isNowSaved = next.includes(listing.id);
+    setSaved(isNowSaved);
+    setSavedPop(true);
+    window.setTimeout(() => setSavedPop(false), 280);
+    toast(
+      isNowSaved
+        ? { type: "success", message: "Seçilmişlərə əlavə edildi", sound: "like" }
+        : { type: "info", message: "Seçilmişlərdən çıxarıldı" }
+    );
   };
 
   const share = async () => {
@@ -262,9 +273,12 @@ export default function ListingPage() {
     try {
       await navigator.clipboard.writeText(url);
       setShared(true);
+      toast({ type: "info", message: "Link kopyalandı" });
       window.setTimeout(() => setShared(false), 2000);
     } catch {
-      setErrorMsg("Linki kopyalamaq alınmadı");
+      const message = "Linki kopyalamaq alınmadı";
+      setErrorMsg(message);
+      toast({ type: "error", message });
     }
   };
 
@@ -287,13 +301,18 @@ export default function ListingPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error ?? "Xəta baş verdi");
+        const message = data.error ?? "Xəta baş verdi";
+        setErrorMsg(message);
+        toast({ type: "error", message });
         return;
       }
       window.localStorage.setItem("gecele_phone", guestPhone.trim());
+      toast({ type: "success", message: "Rezervasiya yaradıldı — ödənişə keçirsiniz" });
       window.location.href = `/odenis/${data.bookingId}`;
     } catch {
-      setErrorMsg("Şəbəkə xətası — yenidən cəhd edin");
+      const message = "Şəbəkə xətası — yenidən cəhd edin";
+      setErrorMsg(message);
+      toast({ type: "error", message });
     } finally {
       setSubmitting(false);
     }
@@ -317,16 +336,22 @@ export default function ListingPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setRevMsg({ ok: false, text: data.error ?? "Xəta baş verdi" });
+        const message = data.error ?? "Xəta baş verdi";
+        setRevMsg({ ok: false, text: message });
+        toast({ type: "error", message });
         return;
       }
       setReviews((r) => [data as ReviewDto, ...r]);
-      setRevMsg({ ok: true, text: "Rəyiniz dərc olundu — təşəkkürlər!" });
+      const message = "Rəyiniz dərc olundu — təşəkkürlər!";
+      setRevMsg({ ok: true, text: message });
+      toast({ type: "success", message });
       setRevCode("");
       setRevText("");
       setShowRevForm(false);
     } catch {
-      setRevMsg({ ok: false, text: "Şəbəkə xətası — yenidən cəhd edin" });
+      const message = "Şəbəkə xətası — yenidən cəhd edin";
+      setRevMsg({ ok: false, text: message });
+      toast({ type: "error", message });
     } finally {
       setRevBusy(false);
     }
@@ -368,7 +393,7 @@ export default function ListingPage() {
               aria-pressed={saved}
               className="flex items-center gap-2 px-3 py-2 rounded-lg font-semibold underline hover:bg-kraft transition-colors"
             >
-              <IconHeart filled={saved} className="w-4 h-4" />
+              <IconHeart filled={saved} className={`w-4 h-4 ${savedPop ? "gecele-heart-pop" : ""}`} />
               {saved ? "Saxlanıldı" : "Saxla"}
             </button>
           </div>

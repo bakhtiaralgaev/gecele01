@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { IconCheck } from "@/components/Icons";
+import { useToast } from "@/components/Toast";
 
 interface Summary {
   id: string;
@@ -36,6 +38,7 @@ function fmtExpiry(v: string): string {
 
 export default function PaymentPage() {
   const params = useParams<{ id: string }>();
+  const { toast } = useToast();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -46,6 +49,10 @@ export default function PaymentPage() {
   const [paying, setPaying] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [paidCode, setPaidCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (errorMsg) toast({ type: "error", message: errorMsg });
+  }, [errorMsg, toast]);
 
   useEffect(() => {
     fetch(`/api/bookings/${params.id}`)
@@ -133,7 +140,10 @@ export default function PaymentPage() {
   // Uğur ekranı
   if (paidCode) {
     return (
-      <main className="mx-auto max-w-md px-4 mt-10 pb-10 text-center">
+      <main className="gecele-confirmation-reveal mx-auto max-w-md px-4 mt-10 pb-10 text-center">
+        <span className="mx-auto mb-3 w-11 h-11 rounded-full bg-mese-soft text-mese flex items-center justify-center">
+          <IconCheck className="w-6 h-6" />
+        </span>
         <h1 className="font-serif font-extrabold text-2xl tracking-tight">
           Rezervasiya təsdiqləndi
         </h1>
