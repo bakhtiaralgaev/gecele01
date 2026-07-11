@@ -109,6 +109,7 @@ export default function CalendarPanel({
               locale={az}
               selected={selected}
               onSelect={(range) => {
+                console.log("RDP_ONSELECT", JSON.stringify({ from: range?.from ? toDayStr(range.from) : null, to: range?.to ? toDayStr(range.to) : null }));
                 onChange(
                   range?.from ? toDayStr(range.from) : "",
                   range?.to ? toDayStr(range.to) : ""

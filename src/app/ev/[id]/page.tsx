@@ -644,7 +644,7 @@ export default function ListingPage() {
               ) : null}
             </div>
 
-            <div className="mt-4 border border-gece/20 rounded-xl overflow-hidden">
+            <div className="mt-4 border border-gece/20 rounded-xl">
               <DateRangePicker
                 checkIn={checkIn}
                 checkOut={checkOut}
