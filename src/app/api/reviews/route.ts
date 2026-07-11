@@ -46,6 +46,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Rəy yalnız qonaqlıq bitdikdən sonra — gələcək tarixli rezervə rəy olmaz
+  if (booking.checkOut > new Date()) {
+    return NextResponse.json(
+      { error: "Rəy yalnız qonaqlıq bitdikdən sonra yazıla bilər" },
+      { status: 403 }
+    );
+  }
+
   const existing = await prisma.review.findUnique({
     where: { bookingCode: code },
   });

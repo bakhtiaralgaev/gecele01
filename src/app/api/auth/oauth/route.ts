@@ -28,7 +28,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // DEMO: provayder hesabını simulyasiya edən istifadəçi
+  // Prod-da açar yoxdursa demo hesabı YARADILMIR — fail closed.
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      { error: "Bu giriş üsulu hazırda əlçatan deyil" },
+      { status: 503 }
+    );
+  }
+
+  // DEMO (yalnız dev): provayder hesabını simulyasiya edən istifadəçi
   const email = `${provider}.demo@gecele.app`;
   const name = provider === "apple" ? "Apple İstifadəçisi" : "Google İstifadəçisi";
 

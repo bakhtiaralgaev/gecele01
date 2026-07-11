@@ -109,18 +109,19 @@ export async function notifyAbandonedBooking(a: {
   bookingUrl: string;
 }): Promise<void> {
   const msg =
-    `Gecələ: ${a.region}dakı "${a.title}" hələ sizi gözləyir. ` +
-    `Behinizi verib tarixi qəbul edin — Beh Qoruması ilə pulunuz təhlükəsizdir.`;
+    `Gecələ: ${a.region}dakı "${a.title}" üçün rezervasiyanız yarımçıq qaldı. ` +
+    `Bəyəndinizsə yenidən baxın — Beh Qoruması ilə ödənişiniz təhlükəsizdir.`;
   await sendSms(a.guestPhone, msg);
   if (a.guestEmail) {
     await sendEmail(
       a.guestEmail,
-      `${a.title} hələ sizi gözləyir`,
-      `<h2>Rezervasiyanızı tamamlayın</h2>` +
-        `<p>${a.title}, ${a.region} üçün seçdiyiniz tarixlər hələ boşdur.</p>` +
+      `${a.title} — rezervasiyanız yarımçıq qaldı`,
+      `<h2>Rezervasiyanızı tamamlamadınız</h2>` +
+        `<p>${a.title}, ${a.region} üçün başladığınız rezervasiya tamamlanmadı. ` +
+        `Tarixlər hələ də uyğun ola bilər — yoxlamaq üçün evə yenidən baxın.</p>` +
         `<p>Beh Qoruması ilə behiniz ev sahibinə deyil, platformada qalır — ` +
         `risk yoxdur.</p>` +
-        `<p><a href="${a.bookingUrl}">Rezervasiyanı tamamla →</a></p>`
+        `<p><a href="${a.bookingUrl}">Evə yenidən bax →</a></p>`
     );
   }
 }

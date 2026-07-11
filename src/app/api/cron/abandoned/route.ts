@@ -43,6 +43,15 @@ export async function GET(req: NextRequest) {
   let sent = 0;
   for (const b of abandoned) {
     if (!b.guestPhone) continue;
+
+    // Atomik claim: yalnız hələ bildirilməmiş rezervi tutmaq. İki paralel cron
+    // eyni rezervi görsə, yalnız biri claim edir → ikiqat SMS olmur.
+    const claim = await prisma.booking.updateMany({
+      where: { id: b.id, recoveryNotifiedAt: null },
+      data: { recoveryNotifiedAt: new Date() },
+    });
+    if (claim.count === 0) continue; // başqa run artıq tutub
+
     try {
       await notifyAbandonedBooking({
         guestPhone: b.guestPhone,
@@ -51,13 +60,13 @@ export async function GET(req: NextRequest) {
         region: b.listing.region,
         bookingUrl: `${SITE_URL}/ev/${b.listing.slug}`,
       });
-      await prisma.booking.update({
-        where: { id: b.id },
-        data: { recoveryNotifiedAt: new Date() },
-      });
       sent++;
     } catch (e) {
+      // Göndərmə uğursuzdursa claim-i geri qaytar ki, növbəti run yenidən cəhd etsin
       console.error("abandoned recovery failed:", b.id, e);
+      await prisma.booking
+        .update({ where: { id: b.id }, data: { recoveryNotifiedAt: null } })
+        .catch(() => {});
     }
   }
 

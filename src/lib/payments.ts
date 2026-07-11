@@ -119,10 +119,24 @@ const payriffGateway: PaymentGateway = {
   },
 };
 
+// Prod-da real şlüz konfiqurasiya olunmayıbsa fail closed — saxta kart
+// təsdiqlənməsin. Test rejimi yalnız dev-də seçilə bilər.
+const closedGateway: PaymentGateway = {
+  name: "closed",
+  async charge() {
+    return { ok: false, ref: "", error: "Ödəniş sistemi hazırda əlçatan deyil" };
+  },
+  async refund() {
+    return { ok: false, ref: "", error: "Geri qaytarma hazırda mümkün deyil" };
+  },
+};
+
 export function getGateway(): PaymentGateway {
   const live =
     process.env.PAYRIFF_MERCHANT_ID && process.env.PAYRIFF_SECRET_KEY;
-  return live ? payriffGateway : testGateway;
+  if (live) return payriffGateway;
+  // Canlı açar yoxdur: dev-də test şlüzü, prod-da bağlı şlüz
+  return process.env.NODE_ENV === "production" ? closedGateway : testGateway;
 }
 
 export function isTestMode(): boolean {

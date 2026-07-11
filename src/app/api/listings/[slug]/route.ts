@@ -42,7 +42,8 @@ export async function GET(
     prisma.booking.count({
       where: {
         listingId: listing.id,
-        status: { in: ["confirmed", "pending"] },
+        // Yalnız təsdiqlənmiş rezervlər — expired pending hold-lar sayğacı şişirtməsin
+        status: "confirmed",
         createdAt: { gt: new Date(now - 30 * 24 * 60 * 60 * 1000) },
       },
     }),
