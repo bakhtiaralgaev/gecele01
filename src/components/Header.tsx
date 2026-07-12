@@ -15,6 +15,7 @@ export default function Header() {
   const [me, setMe] = useState<Me | null | undefined>(undefined);
   const [open, setOpen] = useState(false);
   const [muted, setMutedState] = useState(false);
+  const [unread, setUnread] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -23,6 +24,25 @@ export default function Header() {
       .then((d) => setMe(d.user))
       .catch(() => setMe(null));
   }, []);
+
+  // Oxunmamış mesaj sayğacı — daxil olanda periodik yenilənir
+  useEffect(() => {
+    if (!me) return;
+    let cancelled = false;
+    const load = () =>
+      fetch("/api/messages")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (!cancelled && d) setUnread(d.totalUnread ?? 0);
+        })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 20000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [me]);
 
   useEffect(() => {
     setMutedState(isMuted());
@@ -98,6 +118,29 @@ export default function Header() {
           >
             {muted ? <IconSpeakerOff className="w-5 h-5" /> : <IconSpeaker className="w-5 h-5" />}
           </button>
+
+          {me && (
+            <Link
+              href="/mesajlar"
+              aria-label={unread > 0 ? `Mesajlar (${unread} oxunmamış)` : "Mesajlar"}
+              className="relative flex items-center justify-center w-10 h-10 text-gece hover:bg-kraft rounded-full transition-colors"
+            >
+              <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" aria-hidden="true">
+                <path
+                  d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {unread > 0 && (
+                <span className="absolute top-1 right-1 bg-nar text-white text-[10px] font-bold rounded-full min-w-[16px] h-[16px] px-1 flex items-center justify-center">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </Link>
+          )}
 
           {me === undefined ? (
             <div className="w-24 h-10 bg-kraft rounded-full animate-pulse" />

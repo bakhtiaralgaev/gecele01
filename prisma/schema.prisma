@@ -92,6 +92,7 @@ model Booking {
   refundRef  String    @default("")
   recoveryNotifiedAt DateTime? // tərk edilmiş rezerv xatırlatması göndərilib
   createdAt  DateTime  @default(now())
+  messages   Message[]
 
   @@index([listingId, checkIn])
   @@index([guestPhone])
@@ -112,6 +113,20 @@ model Review {
   createdAt   DateTime @default(now())
 
   @@index([listingId, createdAt])
+}
+
+// Mesajlaşma — YALNIZ rezervasiyadan sonra. Hər söhbət bir booking-ə bağlıdır;
+// yalnız həmin rezervin qonağı və elanın ev sahibi yaza bilər.
+model Message {
+  id        String   @id @default(cuid())
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  bookingId String
+  sender    String // "guest" | "host"
+  body      String
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([bookingId, createdAt])
 }
 
 // Telefon OTP kodları — yalnız canlı SMS rejimində istifadə olunur.
