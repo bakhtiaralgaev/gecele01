@@ -1,21 +1,40 @@
-node_modules
-.next
-out
+# dependencies
+node_modules/
 
-# Mühit dəyişənləri (nümunə istisna olmaqla)
-.env*
-!.env.example
+# next.js
+.next/
+out/
 
-*.tsbuildinfo
-next-env.d.ts
+# production
+build/
 
-# SQLite (lokal DB)
-/prisma/*.db
-/prisma/*.db-journal
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# İstifadəçi yüklədiyi fayllar (lokal)
-/public/uploads
+# env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
+# OS
 .DS_Store
-.vercel
-.gstack/
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+
+# coverage
+coverage/
+
+# Prisma
+prisma/dev.db
+prisma/dev.db-journal
