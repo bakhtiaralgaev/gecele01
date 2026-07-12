@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { slug: string } }
 ) {
+  const limited = rateLimit(req, "listing-view", 60, 5 * 60_000);
+  if (limited) return limited;
+
   const listing = await prisma.listing.findFirst({
     where: {
       OR: [{ slug: params.slug }, { id: params.slug }],

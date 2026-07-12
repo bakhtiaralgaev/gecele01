@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
-import { coordsFor } from "@/lib/data";
+import { coordsFor, REGIONS } from "@/lib/data";
+import { rateLimit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +133,18 @@ export async function GET(req: NextRequest) {
 
 // Ev sahibi müraciəti — moderasiya üçün "pending" statusla düşür
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "listing-create", 10, 10 * 60_000);
+  if (limited) return limited;
+
+  // Elan yaratmaq üçün giriş məcburidir — anonim spam elanların qarşısını alır
+  const user = await getSessionUser(req);
+  if (!user) {
+    return NextResponse.json(
+      { error: "Elan yerləşdirmək üçün daxil olun" },
+      { status: 401 }
+    );
+  }
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -139,10 +152,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Yanlış sorğu" }, { status: 400 });
   }
 
-  const user = await getSessionUser(req);
-
   const title = String(body.title ?? "").trim();
   const region = String(body.region ?? "").trim();
+  if (!(REGIONS as readonly string[]).includes(region)) {
+    return NextResponse.json({ error: "Bölgə düzgün seçilməyib" }, { status: 400 });
+  }
   const type = String(body.type ?? "").trim();
   const hostName = String(body.hostName ?? user?.name ?? "").trim();
   const hostPhone = String(body.hostPhone ?? user?.phone ?? "").trim();

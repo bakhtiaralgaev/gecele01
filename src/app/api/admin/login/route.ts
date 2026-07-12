@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_COOKIE, adminTokenFor } from "@/lib/admin";
+import { rateLimit } from "@/lib/rateLimit";
 import { createHash, timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "admin-login", 5, 10 * 60_000);
+  if (limited) return limited;
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();

@@ -7,11 +7,15 @@ import {
   toUserDto,
   verifyPassword,
 } from "@/lib/auth";
+import { rateLimit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
 // mode: "register" | "login"
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "auth-email", 8, 5 * 60_000);
+  if (limited) return limited;
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();

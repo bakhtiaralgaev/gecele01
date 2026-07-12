@@ -11,6 +11,7 @@ import {
   toUserDto,
 } from "@/lib/auth";
 import { sendSms } from "@/lib/notify";
+import { rateLimit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,9 @@ const OTP_MAX_ATTEMPTS = 5;
 
 // Addım 1: OTP göndər (SMS provayderi qoşulana qədər demo-da test kodu 1234)
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(req, "otp-send", 5, 5 * 60_000);
+  if (limited) return limited;
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();

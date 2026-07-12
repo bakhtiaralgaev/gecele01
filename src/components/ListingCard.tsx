@@ -10,7 +10,8 @@ const WISHLIST_KEY = "gecele_wishlist";
 
 function readWishlist(): string[] {
   try {
-    return JSON.parse(window.localStorage.getItem(WISHLIST_KEY) ?? "[]");
+    const v = JSON.parse(window.localStorage.getItem(WISHLIST_KEY) ?? "[]");
+    return Array.isArray(v) ? v : [];
   } catch {
     return [];
   }
