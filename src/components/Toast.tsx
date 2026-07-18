@@ -54,7 +54,7 @@ function ToastMessage({ item, dismiss }: { item: ToastItem; dismiss: () => void 
     <button
       type="button"
       onClick={dismiss}
-      className={`gecele-toast mx-auto sm:ml-auto w-full max-w-sm text-left bg-white border border-gece/10 shadow-lift rounded-2xl px-3.5 py-3 flex items-center gap-3 transition-opacity ${
+      className={`gecele-toast mx-auto sm:ml-auto w-full max-w-sm text-left bg-qum border border-gece/10 shadow-lift rounded-2xl px-3.5 py-3 flex items-center gap-3 transition-opacity ${
         item.leaving ? "gecele-toast-leaving" : ""
       }`}
       aria-label="Bildirişi bağla"

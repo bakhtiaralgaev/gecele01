@@ -13,7 +13,6 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function MyBookings() {
   const [me, setMe] = useState<{ name: string } | null | undefined>(undefined);
-  const [phone, setPhone] = useState("");
   const [items, setItems] = useState<BookingDto[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -29,10 +28,7 @@ export default function MyBookings() {
       const res = await fetch(`/api/bookings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "cancel",
-          phone: phone.trim() || undefined,
-        }),
+        body: JSON.stringify({ action: "cancel" }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -75,16 +71,10 @@ export default function MyBookings() {
       .then((r) => r.json())
       .then((d) => {
         setMe(d.user);
-        if (d.user) {
-          // Hesaba bağlı rezervlər avtomatik yüklənir
-          lookup("/api/bookings");
-        } else {
-          const saved = window.localStorage.getItem("gecele_phone");
-          if (saved) {
-            setPhone(saved);
-            lookup(`/api/bookings?phone=${encodeURIComponent(saved)}`);
-          }
-        }
+        // Rezervlər yalnız sessiya ilə yüklənir. Hesabsız edilmiş rezervlər də
+        // görünür: telefon OTP ilə daxil olanda user.phone təsdiqlənir və
+        // server guestPhone üzrə uyğunlaşdırır.
+        if (d.user) lookup("/api/bookings");
       })
       .catch(() => setMe(null));
   }, []);
@@ -96,40 +86,22 @@ export default function MyBookings() {
       </h1>
 
       {me === null && (
-        <>
-          <p className="mt-1 text-sm text-gece/60">
-            <Link href="/giris" className="underline font-semibold text-gece">
-              Daxil olun
-            </Link>{" "}
-            və ya rezervasiya zamanı istifadə etdiyiniz telefon nömrəsi ilə
-            axtarın.
+        <div className="mt-14 text-center">
+          <p className="font-semibold text-gece">
+            Rezervlərinizi görmək üçün daxil olun
           </p>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (phone.trim()) {
-                window.localStorage.setItem("gecele_phone", phone.trim());
-                lookup(`/api/bookings?phone=${encodeURIComponent(phone.trim())}`);
-              }
-            }}
-            className="mt-4 flex gap-2"
+          <p className="mt-1.5 text-sm text-gece/60 leading-relaxed">
+            Hesabsız rezerv etmisinizsə — rezerv zamanı yazdığınız telefon
+            nömrəsi ilə daxil olun. Təsdiq kodundan sonra rezervləriniz
+            avtomatik görünəcək.
+          </p>
+          <Link
+            href="/giris"
+            className="mt-4 inline-block bg-nar hover:bg-nar-dark text-white font-semibold px-6 py-3 rounded-full"
           >
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+994 50 123 45 67"
-              className="flex-1 rounded-xl border border-gece/20 px-4 py-3 text-[15px] focus:border-gece outline-none"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-gece text-white font-semibold px-6 rounded-xl disabled:opacity-50"
-            >
-              {loading ? "..." : "Axtar"}
-            </button>
-          </form>
-        </>
+            Daxil ol
+          </Link>
+        </div>
       )}
 
       {errorMsg && (

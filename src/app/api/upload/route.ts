@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
+import { rateLimit } from "@/lib/rateLimit";
+import { processListingImage, type ImageFormat } from "@/lib/watermark";
 import { randomUUID } from "crypto";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
@@ -36,6 +38,10 @@ function hasImageSignature(buf: Buffer, ext: string): boolean {
 // Elan fotolarının yüklənməsi. Sessiya tələb olunur.
 // Canlıda Vercel Blob (BLOB_READ_WRITE_TOKEN), lokalda public/uploads.
 export async function POST(req: NextRequest) {
+  // Saatda 40 foto — hesab ələ keçsə də yaddaş/xərc hücumu olmasın
+  const limited = rateLimit(req, "upload", 40, 60 * 60_000);
+  if (limited) return limited;
+
   const user = await getSessionUser(req);
   if (!user) {
     return NextResponse.json({ error: "Daxil olun" }, { status: 401 });
@@ -63,11 +69,25 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const buf = Buffer.from(await file.arrayBuffer());
-  if (!hasImageSignature(buf, ext)) {
+  const raw = Buffer.from(await file.arrayBuffer());
+  if (!hasImageSignature(raw, ext)) {
     return NextResponse.json(
       { error: "Fayl həqiqi şəkil deyil" },
       { status: 400 }
+    );
+  }
+
+  // Su nişanı + EXIF təmizliyi + ölçü. Emal uğursuzdursa yükləməni dayandırırıq:
+  // EXIF-li (GPS-li) xam şəkli saxlamaq məxfilik riskidir.
+  let buf: Buffer;
+  try {
+    const format: ImageFormat = ext === "jpg" ? "jpeg" : (ext as ImageFormat);
+    buf = await processListingImage(raw, format);
+  } catch (e) {
+    console.error("[upload] şəkil emalı alınmadı:", e);
+    return NextResponse.json(
+      { error: "Şəkil emal edilə bilmədi — başqa fayl yoxlayın" },
+      { status: 422 }
     );
   }
 

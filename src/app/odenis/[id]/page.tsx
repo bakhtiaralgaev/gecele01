@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { IconCheck } from "@/components/Icons";
+import SuccessCheck from "@/components/SuccessCheck";
 import { useToast } from "@/components/Toast";
+import { playSound, primeSound } from "@/lib/sound";
 
 interface Summary {
   id: string;
@@ -54,6 +56,13 @@ export default function PaymentPage() {
     if (errorMsg) toast({ type: "error", message: errorMsg });
   }, [errorMsg, toast]);
 
+  // Təsdiq anında uğur səsi — animasiya ilə eyni vaxtda
+  useEffect(() => {
+    if (!paidCode) return;
+    primeSound();
+    playSound("success");
+  }, [paidCode]);
+
   useEffect(() => {
     fetch(`/api/bookings/${params.id}`)
       .then((r) => {
@@ -86,7 +95,7 @@ export default function PaymentPage() {
   if (!summary) {
     return (
       <main className="mx-auto max-w-md px-4 mt-8">
-        <div className="h-72 bg-white rounded-yurd shadow-yurd animate-pulse" />
+        <div className="h-72 bg-qum rounded-yurd shadow-yurd animate-pulse" />
       </main>
     );
   }
@@ -140,35 +149,35 @@ export default function PaymentPage() {
   // Uğur ekranı
   if (paidCode) {
     return (
-      <main className="gecele-confirmation-reveal mx-auto max-w-md px-4 mt-10 pb-10 text-center">
-        <span className="mx-auto mb-3 w-11 h-11 rounded-full bg-mese-soft text-mese flex items-center justify-center">
-          <IconCheck className="w-6 h-6" />
-        </span>
-        <h1 className="font-serif font-extrabold text-2xl tracking-tight">
-          Rezervasiya təsdiqləndi
-        </h1>
-        <p className="mt-1.5 text-sm text-gece/60 font-medium">
-          {summary.title} · {summary.checkIn} → {summary.checkOut}
-        </p>
-        <div className="mt-5 border-2 border-dashed border-mese/30 bg-mese-soft rounded-yurd py-6">
-          <div className="text-[11px] font-bold text-gece/50 uppercase">
-            Rezervasiya kodu
+      <main className="mx-auto max-w-md px-4 mt-10 pb-10 text-center">
+        <SuccessCheck className="mb-2" />
+        <div className="gc-stagger">
+          <h1 className="font-serif font-extrabold text-2xl tracking-tight">
+            Rezervasiya təsdiqləndi
+          </h1>
+          <p className="mt-1.5 text-sm text-gece/60 font-medium">
+            {summary.title} · {summary.checkIn} → {summary.checkOut}
+          </p>
+          <div className="mt-5 border-2 border-dashed border-mese/30 bg-mese-soft rounded-yurd py-6">
+            <div className="text-[11px] font-bold text-gece/50 uppercase">
+              Rezervasiya kodu
+            </div>
+            <div className="text-4xl font-extrabold tracking-widest text-mese">
+              {paidCode}
+            </div>
           </div>
-          <div className="text-4xl font-extrabold tracking-widest text-mese">
-            {paidCode}
-          </div>
+          <p className="mt-4 text-sm text-gece/60 font-medium leading-relaxed">
+            Beh <b>{summary.deposit} ₼</b> Beh Qorumasına alındı — evə girənə
+            qədər bizdə qalır. Qalıq məbləği (
+            {summary.total - summary.deposit} ₼) girişdə ev sahibinə ödəyirsiniz.
+          </p>
+          <Link
+            href="/rezervlerim"
+            className="mt-5 inline-block bg-mese text-white font-bold px-6 py-3 rounded-full"
+          >
+            Rezervlərimə bax
+          </Link>
         </div>
-        <p className="mt-4 text-sm text-gece/60 font-medium leading-relaxed">
-          Beh <b>{summary.deposit} ₼</b> Beh Qorumasına alındı — evə girənə
-          qədər bizdə qalır. Qalıq məbləği (
-          {summary.total - summary.deposit} ₼) girişdə ev sahibinə ödəyirsiniz.
-        </p>
-        <Link
-          href="/rezervlerim"
-          className="mt-5 inline-block bg-mese text-white font-bold px-6 py-3 rounded-full"
-        >
-          Rezervlərimə bax
-        </Link>
       </main>
     );
   }
@@ -200,7 +209,7 @@ export default function PaymentPage() {
       </h1>
 
       {/* Sifariş xülasəsi */}
-      <div className="mt-4 bg-white rounded-yurd shadow-yurd p-4 flex gap-4 items-center">
+      <div className="mt-4 bg-qum rounded-yurd shadow-yurd p-4 flex gap-4 items-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={summary.photo}
@@ -232,16 +241,49 @@ export default function PaymentPage() {
       </div>
 
       {summary.testMode && (
-        <p className="mt-3 text-[11px] font-bold text-gece/50 bg-white rounded-xl px-3 py-2 shadow-yurd">
+        <p className="mt-3 text-[11px] font-bold text-gece/50 bg-qum rounded-xl px-3 py-2 shadow-yurd">
           SINAQ REJİMİ — real ödəniş çıxılmır. İstənilən 16 rəqəmli kart işləyir
           (0000 ilə bitən kart imtina ssenarisini yoxlayır).
         </p>
       )}
 
+      {/* Ödəniş üsulu — hazırda bank kartı; cüzdanlar tezliklə */}
+      <div className="mt-4">
+        <span className="text-xs font-bold uppercase text-gece/50">
+          Ödəniş üsulu
+        </span>
+        <div className="mt-2 space-y-2">
+          <div className="flex items-center justify-center gap-2 rounded-xl border-2 border-mese bg-mese-soft text-mese px-3 py-3 text-sm font-bold">
+            <IconCheck className="w-4 h-4" />
+            Bank kartı
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {["ABB Pay", "Google Pay", "Apple Pay"].map((label) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() =>
+                  toast({
+                    type: "info",
+                    message: `${label} tezliklə əlavə olunacaq`,
+                  })
+                }
+                className="relative flex items-center justify-center rounded-xl border-2 border-gece/10 px-2 py-3 text-xs font-bold text-gece/40 hover:border-gece/20 transition-colors"
+              >
+                {label}
+                <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gece text-qum text-[9px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                  tezliklə
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Kart forması */}
       <form
         onSubmit={pay}
-        className="mt-4 bg-white rounded-yurd shadow-yurd p-5 space-y-4"
+        className="mt-4 bg-qum rounded-yurd shadow-yurd p-5 space-y-4"
       >
         <label className="block">
           <span className="text-xs font-bold uppercase text-gece/50">

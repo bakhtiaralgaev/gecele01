@@ -257,7 +257,7 @@ export default function HostPage() {
         <button
           onClick={becomeHost}
           disabled={busy}
-          className="mt-5 bg-gece text-white font-semibold px-8 py-3.5 rounded-full disabled:opacity-50"
+          className="mt-5 bg-gece text-qum font-semibold px-8 py-3.5 rounded-full disabled:opacity-50"
         >
           {busy ? "Keçirilir..." : "Ev sahibi hesabına keç"}
         </button>
@@ -319,7 +319,7 @@ export default function HostPage() {
               <select
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
-                className={`${input} bg-white`}
+                className={`${input} bg-qum`}
               >
                 {REGIONS.map((r) => (
                   <option key={r} value={r}>
@@ -333,7 +333,7 @@ export default function HostPage() {
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className={`${input} bg-white`}
+                className={`${input} bg-qum`}
               >
                 {TYPES.map((t) => (
                   <option key={t} value={t}>

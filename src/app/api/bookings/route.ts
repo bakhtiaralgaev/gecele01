@@ -119,26 +119,29 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// Rezervlərim siyahısı.
+//
+// TƏHLÜKƏSİZLİK: əvvəllər ?phone= parametri autentifikasiyasız qəbul olunurdu —
+// telefon nömrəsini bilən hər kəs başqasının rezervlərini (ev, tarix, məbləğ)
+// görə bilirdi. İndi sessiya məcburidir. Hesabsız (anonim) edilmiş rezervlər
+// istifadəçinin TƏSDİQLƏNMİŞ telefonu ilə uyğunlaşdırılır: user.phone yalnız
+// SMS OTP axını ilə yazılır (@unique), yəni sahiblik sübut olunub.
 export async function GET(req: NextRequest) {
-  const phone = normalizePhone(req.nextUrl.searchParams.get("phone") ?? "");
-
-  // Telefon verilməyibsə, hesab sessiyası üzrə axtarılır
-  let where: { guestPhone: string } | { userId: string };
-  if (/^\+?\d{9,13}$/.test(phone)) {
-    where = { guestPhone: phone };
-  } else {
-    const user = await getSessionUser(req);
-    if (!user) {
-      return NextResponse.json(
-        { error: "Telefon nömrəsini düzgün yazın" },
-        { status: 400 }
-      );
-    }
-    where = { userId: user.id };
+  const user = await getSessionUser(req);
+  if (!user) {
+    return NextResponse.json(
+      { error: "Rezervlərinizi görmək üçün daxil olun" },
+      { status: 401 }
+    );
   }
 
+  const or: ({ userId: string } | { guestPhone: string })[] = [
+    { userId: user.id },
+  ];
+  if (user.phone) or.push({ guestPhone: user.phone });
+
   const bookings = await prisma.booking.findMany({
-    where,
+    where: { OR: or },
     orderBy: { createdAt: "desc" },
     include: { listing: { select: { title: true, region: true, photo: true } } },
   });

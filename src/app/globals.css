@@ -5,8 +5,61 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============ Tema tokenləri (gündüz / gecə) ============
+   Bütün rəng sinifləri (text-gece, bg-kraft, border-gece/10 …) bu
+   dəyişənlərə bağlıdır — rejim dəyişəndə 617 sinif avtomatik uyğunlaşır. */
+:root {
+  color-scheme: light;
+  --c-qum: 255 255 255;
+  --c-gece: 34 34 34;
+  --c-kraft: 247 247 247;
+  --c-nar: 227 28 95;
+  --c-nar-dark: 193 19 78;
+  --c-nar-soft: 255 233 240;
+  --c-mese: 31 77 58;
+  --c-mese-dark: 21 54 39;
+  --c-mese-soft: 232 242 237;
+  --c-xezer: 46 126 140;
+  --c-xezer-soft: 226 240 243;
+
+  --s-yurd: 0 1px 2px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
+  --s-lift: 0 6px 16px rgba(0, 0, 0, 0.12);
+  --s-pill: 0 3px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+  color-scheme: dark;
+  --c-qum: 15 17 21; /* səhifə fonu */
+  --c-gece: 235 237 240; /* mətn — semantika saxlanılır, dəyər çevrilir */
+  --c-kraft: 30 33 39; /* qalxmış panel */
+  /* Brend rəngi qaranlıqda bir az işıqlandırılır ki, həm düymədə (ağ mətnlə),
+     həm də soft fon üzərində mətn kimi oxunaqlı qalsın. */
+  --c-nar: 240 57 110;
+  --c-nar-dark: 227 28 95;
+  --c-nar-soft: 47 19 29;
+  /* #1F4D3A qaranlıqda demək olar görünmür — etibar yaşılı işıqlandırılır */
+  --c-mese: 53 165 120;
+  --c-mese-dark: 40 130 95;
+  --c-mese-soft: 18 41 32;
+  --c-xezer: 90 180 195;
+  --c-xezer-soft: 18 40 45;
+
+  --s-yurd: 0 1px 2px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+  --s-lift: 0 6px 20px rgba(0, 0, 0, 0.55);
+  --s-pill: 0 3px 12px rgba(0, 0, 0, 0.5);
+}
+
 body {
   @apply bg-qum text-gece antialiased font-sans;
+}
+
+/* Tema keçidi — sərt sıçrayış olmasın (hərəkət həssaslığına hörmətlə) */
+@media (prefers-reduced-motion: no-preference) {
+  body,
+  header,
+  footer {
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
 }
 
 /* Standalone (App Store / Play wrapper) — notch/home-indicator təhlükəsiz sahəsi */
@@ -33,37 +86,87 @@ body {
   border-radius: 8px;
 }
 
-/* ============ İlk giriş animasiyası ============ */
+/* ============ İlk giriş animasiyası (futuristik) ============ */
 .intro-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: #ffffff;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  animation: introCurtain 0.72s cubic-bezier(0.76, 0, 0.24, 1) 2s both;
+  background: radial-gradient(
+    120% 120% at 50% 25%,
+    #1b2130 0%,
+    #10141c 55%,
+    #0a0c11 100%
+  );
+  animation: introOut 0.8s cubic-bezier(0.7, 0, 0.2, 1) 2.35s both;
 }
-/* Brendin arxasında incə radial işıq */
-.intro-overlay::before {
-  content: "";
+
+/* Sürüşən aurora işıqları — dərinlik hissi */
+.intro-aurora {
   position: absolute;
-  width: 62vmax;
-  height: 62vmax;
   border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.intro-aurora-1 {
+  width: 46vmax;
+  height: 46vmax;
+  top: 6%;
+  left: 10%;
   background: radial-gradient(
     circle,
-    rgba(227, 28, 95, 0.07) 0%,
-    rgba(227, 28, 95, 0) 68%
+    rgba(227, 28, 95, 0.55) 0%,
+    rgba(227, 28, 95, 0) 70%
   );
-  opacity: 0;
-  animation: introGlow 1.7s ease-out 0.15s both;
+  animation: introAurora1 3.2s ease-out 0.1s both;
 }
+.intro-aurora-2 {
+  width: 42vmax;
+  height: 42vmax;
+  bottom: 4%;
+  right: 8%;
+  background: radial-gradient(
+    circle,
+    rgba(74, 108, 247, 0.5) 0%,
+    rgba(74, 108, 247, 0) 70%
+  );
+  animation: introAurora2 3.2s ease-out 0.25s both;
+}
+
+/* İncə futuristik tor — mərkəzə doğru əriyir */
+.intro-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+      rgba(255, 255, 255, 0.045) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 60%);
+  mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 60%);
+  opacity: 0;
+  animation: introGridIn 1.6s ease-out 0.2s both;
+}
+
 .intro-inner {
   position: relative;
   text-align: center;
-  animation: introLift 0.72s cubic-bezier(0.76, 0, 0.24, 1) 2s both;
+  animation: introZoom 0.8s cubic-bezier(0.7, 0, 0.2, 1) 2.35s both;
+}
+
+/* DİQQƏT: burada `em` İSTİFADƏ ETMƏ — bu div şrift ölçüsünü body-dən (16px)
+   miras alır, mətnin 96px-indən yox. Əvvəl `padding:0.1em` = cəmi 1.6px idi və
+   `overflow:hidden` ilə birlikdə "g" hərfinin quyruğunu, 28px parıltını və
+   animasiya blur-unu kəsirdi — söz qutuya salınmış kimi görünürdü.
+   İndi kəsmə yoxdur; sheen öz sərhədində qalır (background-position ilə). */
+.intro-word-wrap {
+  position: relative;
+  display: inline-block;
 }
 .intro-word {
   display: flex;
@@ -73,43 +176,96 @@ body {
 .intro-letter {
   display: inline-block;
   opacity: 0;
-  transform: translateY(0.5em);
-  filter: blur(12px);
-  animation: introRise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform: translateY(0.7em);
+  filter: blur(14px);
+  text-shadow: 0 0 28px rgba(227, 28, 95, 0.35);
+  animation: introRise 0.95s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .intro-dot {
   display: inline-block;
   opacity: 0;
-  transform: translateY(-0.85em);
-  animation: introDrop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  color: #e31c5f;
+  transform: translateY(-0.9em) scale(0.6);
+  filter: drop-shadow(0 0 12px rgba(227, 28, 95, 0.6));
+  animation: introDrop 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
+
+/* İşıq süpürgəsi (sheen) — sözün üstündən bir dəfə keçir */
+/* Ürək döyüntüsü — sıçrayış bitəndən sonra "lub-dub" ritmi ilə iki dəfə vurur.
+   Ayrıca sinifdir, çünki .intro-dot-un animation-delay-i komponentdə inline
+   verilir — eyni elementə ikinci animasiya qoysaq delay ikisinə də tətbiq olunur. */
+.intro-heart-beat {
+  transform-origin: center;
+  animation: introHeartBeat 0.85s ease-in-out 1.4s 2 both;
+}
+@keyframes introHeartBeat {
+  0% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.22); /* lub — güclü vuruş */
+  }
+  24% {
+    transform: scale(1);
+  }
+  36% {
+    transform: scale(1.13); /* dub — zəif ikinci vuruş */
+  }
+  50% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1); /* fasilə */
+  }
+}
+
+/* Sheen: transform ilə sürüşmür (kənara çıxıb kəsilmə tələb edirdi),
+   background-position ilə sürüşür — həmişə öz qutusunda qalır. */
+.intro-sheen {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 58%
+  );
+  background-size: 300% 100%;
+  background-position: 150% 0;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: introSheen 1.15s cubic-bezier(0.5, 0, 0.2, 1) 1.05s both;
+}
+
+/* Nazik parlaq xətt — mərkəzdən genişlənir */
+.intro-line {
+  display: block;
+  height: 1.5px;
+  width: 0;
+  margin: 1.6rem auto 0;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #e31c5f 22%,
+    #ff5c8a 50%,
+    #e31c5f 78%,
+    transparent
+  );
+  box-shadow: 0 0 16px rgba(227, 28, 95, 0.5);
+  animation: introLine 1s cubic-bezier(0.16, 1, 0.3, 1) 0.85s both;
+}
+
 .intro-tagline {
   opacity: 0;
-  letter-spacing: 0.2em;
-  transform: translateY(6px);
-  animation: introTagline 0.95s cubic-bezier(0.16, 1, 0.3, 1) both;
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
+  transform: translateY(8px);
+  font-weight: 500;
+  animation: introTagline 1s cubic-bezier(0.16, 1, 0.3, 1) 1.25s both;
 }
-.intro-bar {
-  position: absolute;
-  left: 50%;
-  bottom: -2.6rem;
-  transform: translateX(-50%);
-  width: 132px;
-  height: 2px;
-  border-radius: 2px;
-  background: rgba(34, 34, 34, 0.1);
-  overflow: hidden;
-}
-.intro-bar-fill {
-  display: block;
-  height: 100%;
-  width: 100%;
-  border-radius: 2px;
-  background: #e31c5f;
-  transform-origin: left center;
-  transform: scaleX(0);
-  animation: introBar 1.7s cubic-bezier(0.65, 0, 0.35, 1) 0.2s both;
-}
+
 @keyframes introRise {
   to {
     opacity: 1;
@@ -120,38 +276,66 @@ body {
 @keyframes introDrop {
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes introSheen {
+  to {
+    background-position: -150% 0;
+  }
+}
+@keyframes introLine {
+  to {
+    width: 240px;
   }
 }
 @keyframes introTagline {
   to {
     opacity: 1;
-    letter-spacing: 0.05em;
     transform: translateY(0);
   }
 }
-@keyframes introBar {
-  to {
-    transform: scaleX(1);
+@keyframes introAurora1 {
+  0% {
+    opacity: 0;
+    transform: translate(-8%, -6%) scale(0.9);
   }
-}
-@keyframes introGlow {
-  35% {
+  40% {
     opacity: 1;
   }
-  to {
-    opacity: 0.55;
+  100% {
+    opacity: 0.85;
+    transform: translate(6%, 4%) scale(1.1);
   }
 }
-@keyframes introLift {
-  to {
-    transform: translateY(-16px);
+@keyframes introAurora2 {
+  0% {
     opacity: 0;
+    transform: translate(8%, 6%) scale(0.9);
+  }
+  45% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.8;
+    transform: translate(-6%, -4%) scale(1.12);
   }
 }
-@keyframes introCurtain {
+@keyframes introGridIn {
   to {
-    transform: translateY(-100%);
+    opacity: 1;
+  }
+}
+@keyframes introZoom {
+  to {
+    transform: scale(1.14);
+    opacity: 0;
+    filter: blur(4px);
+  }
+}
+@keyframes introOut {
+  to {
+    opacity: 0;
     visibility: hidden;
   }
 }
@@ -202,6 +386,81 @@ body {
   }
 }
 
+/* ============ Ödəniş təsdiqi animasiyası ============ */
+.gc-success {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+}
+.gc-success-svg {
+  width: 100%;
+  height: 100%;
+  stroke: rgb(var(--c-mese));
+  overflow: visible;
+}
+/* Susmaya görə SON kadr göstərilir — hərəkət söndürülübsə nişan yenə görünür */
+.gc-success-circle,
+.gc-success-check {
+  stroke-dashoffset: 0;
+}
+.gc-success-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  border: 2px solid rgb(var(--c-mese));
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Dairə çəkilir → quş yazılır → dalğalar yayılır */
+  .gc-success-circle {
+    stroke-dasharray: 151; /* 2πr, r=24 */
+    stroke-dashoffset: 151;
+    animation: gcDrawCircle 0.62s cubic-bezier(0.65, 0, 0.35, 1) 0.05s forwards;
+  }
+  .gc-success-check {
+    stroke-dasharray: 36;
+    stroke-dashoffset: 36;
+    animation: gcDrawCheck 0.34s cubic-bezier(0.65, 0, 0.35, 1) 0.58s forwards;
+  }
+  .gc-success-ring {
+    animation: gcRing 1.6s ease-out 0.66s 2;
+  }
+  .gc-success-ring-2 {
+    animation-delay: 1.05s;
+  }
+
+  @keyframes gcDrawCircle {
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes gcDrawCheck {
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes gcRing {
+    0% { opacity: 0.45; transform: scale(0.92); }
+    100% { opacity: 0; transform: scale(1.75); }
+  }
+
+  /* Nişandan sonra məzmun pillə-pillə qalxır */
+  .gc-stagger > * {
+    animation: gcRise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .gc-stagger > *:nth-child(1) { animation-delay: 0.62s; }
+  .gc-stagger > *:nth-child(2) { animation-delay: 0.74s; }
+  .gc-stagger > *:nth-child(3) { animation-delay: 0.86s; }
+  .gc-stagger > *:nth-child(4) { animation-delay: 0.98s; }
+  .gc-stagger > *:nth-child(5) { animation-delay: 1.1s; }
+  .gc-stagger > *:nth-child(6) { animation-delay: 1.22s; }
+
+  @keyframes gcRise {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
 /* ============ Xəritə markerləri (Leaflet) ============ */
 /* Airbnb pill-i: ağ fon, tünd mətn, haşiyəsiz. Rəqəm dairəsi yoxdur —
    qiymət pini ilə elan sayı bir-birinə qarışmasın deyə ikisi də pill-dir. */
@@ -215,8 +474,8 @@ body {
      mətn pill-dən daşırdı. Məzmuna görə ölçülür. */
   width: max-content;
   height: max-content;
-  background: #ffffff;
-  color: #222222;
+  background: rgb(var(--c-qum));
+  color: rgb(var(--c-gece));
   font-family: var(--font-sans), "Segoe UI", system-ui, sans-serif;
   font-weight: 600;
   font-size: 14px;
@@ -239,8 +498,8 @@ body {
 .gc-cluster:hover,
 .leaflet-marker-icon:focus-visible .gc-pin,
 .leaflet-marker-icon:focus-visible .gc-cluster {
-  background: #222222;
-  color: #ffffff;
+  background: rgb(var(--c-gece));
+  color: rgb(var(--c-qum));
   transform: translate(-50%, -50%) scale(1.06);
   z-index: 1000;
 }
@@ -262,7 +521,8 @@ body {
   display: flex;
   gap: 10px;
   text-decoration: none;
-  color: #222222;
+  color: rgb(var(--c-gece));
+  background: rgb(var(--c-qum));
 }
 .gc-pop img {
   width: 76px;
@@ -284,7 +544,7 @@ body {
 }
 .gc-pop-m {
   font-size: 12px;
-  color: #555555;
+  color: rgb(var(--c-gece) / 0.6);
   margin-top: 5px;
 }
 
@@ -294,13 +554,13 @@ body {
 }
 /* react-day-picker öz dəyişənlərini .rdp-root-da təyin edir — burada üstələyirik */
 .gc-cal .rdp-root {
-  --rdp-accent-color: #e31c5f;
-  --rdp-accent-background-color: #ffe9f0;
-  --rdp-today-color: #e31c5f;
-  --rdp-range_middle-background-color: #ffe9f0;
-  --rdp-range_middle-color: #222222;
-  --rdp-range_start-color: #ffffff;
-  --rdp-range_end-color: #ffffff;
+  --rdp-accent-color: rgb(var(--c-nar));
+  --rdp-accent-background-color: rgb(var(--c-nar-soft));
+  --rdp-today-color: rgb(var(--c-nar));
+  --rdp-range_middle-background-color: rgb(var(--c-nar-soft));
+  --rdp-range_middle-color: rgb(var(--c-gece));
+  --rdp-range_start-color: rgb(var(--c-qum));
+  --rdp-range_end-color: rgb(var(--c-qum));
   --rdp-selected-border: none;
   --rdp-day-width: 46px;
   --rdp-day-height: 46px;
@@ -322,13 +582,13 @@ body {
 .gc-cal .rdp-caption_label {
   font-weight: 700;
   font-size: 16px;
-  color: #222222;
+  color: rgb(var(--c-gece));
   text-transform: capitalize;
 }
 .gc-cal .rdp-weekday {
   font-size: 12px;
   font-weight: 500;
-  color: #222222;
+  color: rgb(var(--c-gece));
   text-transform: none;
 }
 
@@ -343,10 +603,10 @@ body {
 }
 .gc-cal .rdp-button_previous:hover,
 .gc-cal .rdp-button_next:hover {
-  background: #f7f7f7;
+  background: rgb(var(--c-kraft));
 }
 .gc-cal .rdp-chevron {
-  fill: #222222;
+  fill: rgb(var(--c-gece));
 }
 
 /* Günlər — dairəvi, seçim marka rəngi */
@@ -355,36 +615,36 @@ body {
   border: 1px solid transparent;
 }
 .gc-cal .rdp-day_button:hover {
-  border-color: #222222;
+  border-color: rgb(var(--c-gece));
 }
 .gc-cal .rdp-today:not(.rdp-selected) .rdp-day_button {
   font-weight: 700;
 }
 .gc-cal .rdp-range_start .rdp-day_button,
 .gc-cal .rdp-range_end .rdp-day_button {
-  background: #e31c5f;
-  color: #ffffff;
-  border-color: #e31c5f;
+  background: rgb(var(--c-nar));
+  color: rgb(var(--c-qum));
+  border-color: rgb(var(--c-nar));
 }
 /* Aralıq — fasiləsiz zolaq, dairəvi deyil */
 .gc-cal .rdp-range_middle {
-  background: #ffe9f0;
+  background: rgb(var(--c-nar-soft));
 }
 .gc-cal .rdp-range_middle .rdp-day_button {
   background: transparent;
-  color: #222222;
+  color: rgb(var(--c-gece));
   border-radius: 999px;
 }
 .gc-cal .rdp-range_start:not(.rdp-range_end) {
-  background: linear-gradient(90deg, transparent 50%, #ffe9f0 50%);
+  background: linear-gradient(90deg, transparent 50%, rgb(var(--c-nar-soft)) 50%);
 }
 .gc-cal .rdp-range_end:not(.rdp-range_start) {
-  background: linear-gradient(90deg, #ffe9f0 50%, transparent 50%);
+  background: linear-gradient(90deg, rgb(var(--c-nar-soft)) 50%, transparent 50%);
 }
 
 /* Keçmiş / dolu günlər — Airbnb-dəki kimi üstündən xətt */
 .gc-cal .rdp-disabled .rdp-day_button {
-  color: #dddddd;
+  color: rgb(var(--c-gece) / 0.25);
   text-decoration: line-through;
   cursor: not-allowed;
 }

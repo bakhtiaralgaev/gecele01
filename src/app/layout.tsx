@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Inter, Manrope, Lora } from "next/font/google";
+import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import IntroSplash from "@/components/IntroSplash";
 import { ToastProvider } from "@/components/Toast";
+import { LocaleProvider } from "@/components/LocaleProvider";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 // Hər iki şrift Azərbaycan əlifbasını (ə, ı, ğ, ş, ç, ö, ü) tam dəstəkləyir.
 const display = Manrope({
@@ -16,14 +18,6 @@ const display = Manrope({
 const body = Inter({
   subsets: ["latin", "latin-ext"],
   variable: "--font-sans",
-});
-
-// Slogan üçün elegant italik serif — Lora, Azərbaycan "ə" hərfini əsl dəstəkləyir
-const slogan = Lora({
-  subsets: ["latin", "latin-ext"],
-  style: "italic",
-  weight: ["500"],
-  variable: "--font-slogan",
 });
 
 export const metadata: Metadata = {
@@ -63,7 +57,11 @@ export default function RootLayout({
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
   const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
   return (
-    <html lang="az" className={`${display.variable} ${body.variable} ${slogan.variable}`}>
+    <html lang="az" className={`${display.variable} ${body.variable}`}>
+      <head>
+        {/* Tema sinfini boyanmadan ƏVVƏL qoyur — gecə rejimində ağ sıçrayış olmasın */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-screen flex flex-col">
         {gaId && (
           <>
@@ -81,12 +79,14 @@ export default function RootLayout({
             {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${pixelId}');fbq('track','PageView');`}
           </Script>
         )}
-        <ToastProvider>
-          <IntroSplash />
-          <Header />
-          <div className="flex-1">{children}</div>
-          <Footer />
-        </ToastProvider>
+        <LocaleProvider>
+          <ToastProvider>
+            <IntroSplash />
+            <Header />
+            <div className="flex-1">{children}</div>
+            <Footer />
+          </ToastProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

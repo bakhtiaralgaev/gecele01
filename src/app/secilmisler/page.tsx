@@ -4,30 +4,37 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import ListingCard from "@/components/ListingCard";
 import type { ListingDto } from "@/lib/data";
-
-const WISHLIST_KEY = "gecele_wishlist";
+import { readLocalWishlist, WISHLIST_SYNCED_EVENT } from "@/lib/wishlist";
 
 export default function Wishlist() {
   const [items, setItems] = useState<ListingDto[] | null>(null);
 
   useEffect(() => {
-    let ids: string[] = [];
-    try {
-      ids = JSON.parse(window.localStorage.getItem(WISHLIST_KEY) ?? "[]");
-    } catch {
-      ids = [];
-    }
-    if (!Array.isArray(ids) || ids.length === 0) {
-      setItems([]);
-      return;
-    }
-    fetch("/api/listings")
-      .then((r) => r.json())
-      .then((all: ListingDto[]) => {
-        const wanted = new Set(ids);
-        setItems(all.filter((l) => wanted.has(l.id)));
-      })
-      .catch(() => setItems([]));
+    let cancelled = false;
+    const load = () => {
+      const ids = readLocalWishlist();
+      if (ids.length === 0) {
+        if (!cancelled) setItems([]);
+        return;
+      }
+      fetch("/api/listings")
+        .then((r) => r.json())
+        .then((all: ListingDto[]) => {
+          if (cancelled) return;
+          const wanted = new Set(ids);
+          setItems(all.filter((l) => wanted.has(l.id)));
+        })
+        .catch(() => {
+          if (!cancelled) setItems([]);
+        });
+    };
+    load();
+    // Hesab sinxronundan sonra siyahını yenilə (cihazlar arası)
+    window.addEventListener(WISHLIST_SYNCED_EVENT, load);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(WISHLIST_SYNCED_EVENT, load);
+    };
   }, []);
 
   return (

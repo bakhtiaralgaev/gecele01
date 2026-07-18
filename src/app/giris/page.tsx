@@ -165,7 +165,7 @@ export default function LoginPage() {
                 onClick={() => setRole(r)}
                 className={`py-2.5 rounded-lg text-sm font-semibold transition-colors ${
                   role === r
-                    ? "bg-white text-gece shadow-sm"
+                    ? "bg-qum text-gece shadow-sm"
                     : "text-gece/50 hover:text-gece"
                 }`}
               >
@@ -179,7 +179,7 @@ export default function LoginPage() {
             <button
               onClick={() => oauth("apple")}
               disabled={busy}
-              className="w-full flex items-center justify-center gap-2.5 bg-gece text-white font-semibold py-3 rounded-xl disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2.5 bg-gece text-qum font-semibold py-3 rounded-xl disabled:opacity-50"
             >
               <IconApple className="w-5 h-5" />
               Apple ilə davam et

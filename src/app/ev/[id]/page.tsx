@@ -13,9 +13,14 @@ import GuestsPicker, {
 } from "@/components/GuestsPicker";
 import MapView from "@/components/MapView";
 import PhotoGallery from "@/components/PhotoGallery";
+import Avatar from "@/components/Avatar";
 import { useToast } from "@/components/Toast";
-
-const WISHLIST_KEY = "gecele_wishlist";
+import {
+  readLocalWishlist,
+  writeLocalWishlist,
+  pushWishlistChange,
+  WISHLIST_SYNCED_EVENT,
+} from "@/lib/wishlist";
 
 function IconShare({ className }: { className?: string }) {
   return (
@@ -71,15 +76,6 @@ function IconTrend({ className }: { className?: string }) {
   );
 }
 
-function readWishlist(): string[] {
-  try {
-    const v = JSON.parse(window.localStorage.getItem(WISHLIST_KEY) ?? "[]");
-    return Array.isArray(v) ? v : [];
-  } catch {
-    return [];
-  }
-}
-
 function nightsBetween(checkIn: string, checkOut: string): number {
   if (!checkIn || !checkOut) return 0;
   const a = new Date(checkIn).getTime();
@@ -104,6 +100,7 @@ export default function ListingPage() {
   });
   const [guestsOpen, setGuestsOpen] = useState(false);
   const guestsRef = useRef<HTMLDivElement>(null);
+  const reserveRef = useRef<HTMLDivElement>(null);
   const guests = totalGuests(guestCounts);
   const [saved, setSaved] = useState(false);
   const [savedPop, setSavedPop] = useState(false);
@@ -163,7 +160,12 @@ export default function ListingPage() {
   }, [params.id]);
 
   useEffect(() => {
-    if (listing) setSaved(readWishlist().includes(listing.id));
+    if (!listing) return;
+    const refresh = () => setSaved(readLocalWishlist().includes(listing.id));
+    refresh();
+    // Hesab sinxronundan sonra "saxlanıldı" vəziyyətini yenilə
+    window.addEventListener(WISHLIST_SYNCED_EVENT, refresh);
+    return () => window.removeEventListener(WISHLIST_SYNCED_EVENT, refresh);
   }, [listing]);
 
   // Qıtlıq siqnalı — seçilmiş tarixlərə bu bölgədə neçə ev boşdur (real say)
@@ -244,12 +246,13 @@ export default function ListingPage() {
     !submitting;
 
   const toggleSaved = () => {
-    const list = readWishlist();
+    const list = readLocalWishlist();
     const next = list.includes(listing.id)
       ? list.filter((x) => x !== listing.id)
       : [...list, listing.id];
-    window.localStorage.setItem(WISHLIST_KEY, JSON.stringify(next));
+    writeLocalWishlist(next);
     const isNowSaved = next.includes(listing.id);
+    pushWishlistChange(listing.id, isNowSaved);
     setSaved(isNowSaved);
     setSavedPop(true);
     window.setTimeout(() => setSavedPop(false), 280);
@@ -361,7 +364,7 @@ export default function ListingPage() {
     "w-full rounded-lg border border-gece/20 px-3 py-2.5 text-sm focus:border-gece outline-none";
 
   return (
-    <main className="mx-auto max-w-7xl px-4 sm:px-6 pb-16">
+    <main className="mx-auto max-w-7xl px-4 sm:px-6 pb-28 lg:pb-16">
       {/* Başlıq */}
       <div className="mt-6">
         <h1 className="font-serif font-bold text-2xl sm:text-[26px] text-gece tracking-tight">
@@ -450,9 +453,7 @@ export default function ListingPage() {
                 {listing.bedrooms} yataq otağı
               </p>
             </div>
-            <span className="w-12 h-12 rounded-full bg-gece text-white flex items-center justify-center font-serif font-bold text-lg shrink-0">
-              {listing.hostName.charAt(0)}
-            </span>
+            <Avatar name={listing.hostName} size={48} className="text-lg" />
           </div>
 
           {/* Beh qoruması */}
@@ -602,7 +603,7 @@ export default function ListingPage() {
                 <button
                   type="submit"
                   disabled={revBusy}
-                  className="bg-gece text-white font-semibold px-5 py-2.5 rounded-lg text-sm disabled:opacity-50"
+                  className="bg-gece text-qum font-semibold px-5 py-2.5 rounded-lg text-sm disabled:opacity-50"
                 >
                   {revBusy ? "Göndərilir..." : "Rəyi dərc et"}
                 </button>
@@ -625,9 +626,7 @@ export default function ListingPage() {
               {reviews.map((r, i) => (
                 <div key={i}>
                   <div className="flex items-center gap-3">
-                    <span className="w-10 h-10 rounded-full bg-kraft text-gece flex items-center justify-center font-serif font-bold">
-                      {r.guestName.charAt(0)}
-                    </span>
+                    <Avatar name={r.guestName} size={40} />
                     <div>
                       <div className="font-semibold text-sm text-gece">
                         {r.guestName}
@@ -650,7 +649,7 @@ export default function ListingPage() {
         </div>
 
         {/* Sağ — rezervasiya paneli */}
-        <div className="lg:sticky lg:top-24 h-fit">
+        <div ref={reserveRef} className="lg:sticky lg:top-24 h-fit scroll-mt-24">
           <div className="border border-gece/15 rounded-2xl shadow-lift p-6">
             <div className="flex items-baseline gap-2 flex-wrap">
               <p className="text-[22px] text-gece">
@@ -693,7 +692,7 @@ export default function ListingPage() {
                   </span>
                 </button>
                 {guestsOpen && (
-                  <div className="absolute z-30 left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-lift border border-gece/10 p-5">
+                  <div className="absolute z-30 left-0 right-0 top-full mt-2 bg-qum rounded-2xl shadow-lift border border-gece/10 p-5">
                     <GuestsPicker
                       value={guestCounts}
                       onChange={setGuestCounts}
@@ -780,6 +779,44 @@ export default function ListingPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Mobil yapışqan rezerv paneli — masaüstündə gizli */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-qum border-t border-gece/10 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] px-4 py-3 flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-gece leading-tight">
+            {listing.previousPrice ? (
+              <span className="text-gece/40 line-through text-sm mr-1">
+                {listing.previousPrice} ₼
+              </span>
+            ) : null}
+            <span className="font-bold">{listing.pricePerNight} ₼</span>
+            <span className="text-gece/60 text-sm"> gecə</span>
+          </p>
+          {nights > 0 ? (
+            <p className="text-xs text-gece/60 truncate">
+              {total} ₼ · {nights} gecə · beh {deposit} ₼
+            </p>
+          ) : (
+            <p className="text-xs text-gece/60 truncate">Tarixləri seçin</p>
+          )}
+        </div>
+        <button
+          onClick={() => {
+            if (canBook) {
+              reserve();
+            } else {
+              reserveRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }
+          }}
+          disabled={submitting}
+          className="shrink-0 bg-nar hover:bg-nar-dark text-white font-semibold px-6 py-3 rounded-xl disabled:opacity-50 transition-colors"
+        >
+          {submitting ? "..." : nights > 0 ? "Rezerv et" : "Tarixləri seçin"}
+        </button>
       </div>
     </main>
   );

@@ -99,7 +99,7 @@ export default function PhotoGallery({
 
         <button
           onClick={() => setLightbox(0)}
-          className="absolute bottom-5 right-5 flex items-center gap-2 bg-white border border-gece text-gece text-sm font-semibold px-4 py-2.5 rounded-lg shadow-yurd hover:bg-kraft transition-colors"
+          className="absolute bottom-5 right-5 flex items-center gap-2 bg-qum border border-gece text-gece text-sm font-semibold px-4 py-2.5 rounded-lg shadow-yurd hover:bg-kraft transition-colors"
         >
           <IconGrid className="w-4 h-4" />
           Bütün şəkilləri göstər
@@ -119,7 +119,7 @@ export default function PhotoGallery({
             className="w-full h-full object-cover"
           />
         </button>
-        <span className="absolute bottom-3 right-3 bg-white/95 text-gece text-xs font-semibold px-2.5 py-1 rounded-full">
+        <span className="absolute bottom-3 right-3 bg-qum/95 text-gece text-xs font-semibold px-2.5 py-1 rounded-full">
           1 / {count}
         </span>
       </div>
@@ -136,7 +136,7 @@ export default function PhotoGallery({
               onClick={() => setLightbox(null)}
               autoFocus
               aria-label="Qalereyanı bağla"
-              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
+              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-qum/10 transition-colors"
             >
               <IconClose className="w-5 h-5" />
             </button>
@@ -159,14 +159,14 @@ export default function PhotoGallery({
               <button
                 onClick={() => step(-1)}
                 aria-label="Əvvəlki şəkil"
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white text-gece flex items-center justify-center shadow-lift hover:scale-105 transition-transform"
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-qum text-gece flex items-center justify-center shadow-lift hover:scale-105 transition-transform"
               >
                 <IconChevron dir="left" className="w-5 h-5" />
               </button>
               <button
                 onClick={() => step(1)}
                 aria-label="Növbəti şəkil"
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white text-gece flex items-center justify-center shadow-lift hover:scale-105 transition-transform"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-qum text-gece flex items-center justify-center shadow-lift hover:scale-105 transition-transform"
               >
                 <IconChevron dir="right" className="w-5 h-5" />
               </button>

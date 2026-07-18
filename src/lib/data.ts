@@ -13,6 +13,31 @@ export const REGIONS = [
 
 export type Region = (typeof REGIONS)[number];
 
+// Filtr üçün kanonik dəyərlər — seed-dəki ev tiplərini və ən çox rast gəlinən
+// imkanları əhatə edir. Filtr paneli bu siyahılardan qurulur.
+export const PROPERTY_TYPES = [
+  "Villa",
+  "Bağ evi",
+  "Dağ evi",
+  "Həyət evi",
+  "Kotec",
+  "Şale",
+] as const;
+
+export const FILTER_AMENITIES = [
+  "Wi-Fi",
+  "Hovuz",
+  "Manqal",
+  "Kamin",
+  "Parkinq",
+  "Sauna",
+  "Terras",
+] as const;
+
+// Qiymət diapazonu üçün hüdudlar (gecəlik, ₼)
+export const PRICE_MIN = 20;
+export const PRICE_MAX = 500;
+
 export interface ReviewDto {
   guestName: string;
   rating: number;

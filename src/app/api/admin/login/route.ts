@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ADMIN_COOKIE, adminTokenFor } from "@/lib/admin";
+import {
+  ADMIN_COOKIE,
+  ADMIN_SESSION_SECONDS,
+  makeAdminToken,
+  verifyAdminPassword,
+} from "@/lib/admin";
 import { rateLimit } from "@/lib/rateLimit";
-import { createHash, timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -17,24 +21,17 @@ export async function POST(req: NextRequest) {
   }
 
   const password = String(body.password ?? "");
-  const expected = process.env.ADMIN_PASSWORD;
-
-  if (!expected) {
-    return NextResponse.json({ error: "Şifrə yanlışdır" }, { status: 401 });
-  }
-  const pw = createHash("sha256").update(password).digest();
-  const ex = createHash("sha256").update(expected).digest();
-  if (pw.length !== ex.length || !timingSafeEqual(pw, ex)) {
+  if (!verifyAdminPassword(password)) {
     return NextResponse.json({ error: "Şifrə yanlışdır" }, { status: 401 });
   }
 
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(ADMIN_COOKIE, adminTokenFor(expected), {
+  res.cookies.set(ADMIN_COOKIE, makeAdminToken(), {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict", // admin paneli üçün lax-dan sərt
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 12, // 12 saat
+    maxAge: ADMIN_SESSION_SECONDS,
   });
   return res;
 }

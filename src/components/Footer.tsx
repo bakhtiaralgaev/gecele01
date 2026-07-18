@@ -1,12 +1,17 @@
 import Link from "next/link";
+import { IconHeart } from "./Icons";
 
 export default function Footer() {
   return (
     <footer className="mt-20 border-t border-gece/10 bg-kraft">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10 grid grid-cols-1 sm:grid-cols-3 gap-8 text-sm">
         <div>
-          <span className="font-serif font-extrabold text-nar text-lg">
-            gecələ
+          {/* Başlıqdakı ilə eyni loqo kilidi: söz + ürək */}
+          <span className="flex items-end gap-1">
+            <span className="font-serif font-extrabold text-nar text-lg leading-none">
+              gecələ
+            </span>
+            <IconHeart filled className="w-3 h-3 mb-0.5 text-nar" />
           </span>
           <p className="mt-2 text-gece/60 leading-relaxed">
             Azərbaycanda istirahət evlərinin onlayn rezervasiya platforması.

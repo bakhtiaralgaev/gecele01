@@ -85,7 +85,7 @@ export default function SearchPill({
     [
       "relative flex flex-col justify-center text-left rounded-full px-6 py-3.5 min-w-0 transition-colors",
       open === key
-        ? "bg-white shadow-pill"
+        ? "bg-qum shadow-pill"
         : open
           ? "hover:bg-gece/5"
           : "hover:bg-kraft",
@@ -107,7 +107,7 @@ export default function SearchPill({
     <div ref={wrapRef} className="relative mx-auto max-w-3xl">
       <div
         className={`rounded-3xl sm:rounded-full border border-gece/15 shadow-pill flex flex-col sm:flex-row sm:items-center p-2 transition-colors ${
-          open ? "bg-gece/5" : "bg-white"
+          open ? "bg-gece/5" : "bg-qum"
         }`}
       >
         <button
@@ -172,7 +172,7 @@ export default function SearchPill({
 
       {/* Hara */}
       {open === "where" && (
-        <div className="absolute z-40 mt-3 left-0 w-full sm:w-[420px] bg-white rounded-3xl shadow-lift border border-gece/10 p-5 animate-fade-up">
+        <div className="absolute z-40 mt-3 left-0 w-full sm:w-[420px] bg-qum rounded-3xl shadow-lift border border-gece/10 p-5 animate-fade-up">
           <p className="text-xs font-semibold text-gece">
             Bölgə üzrə axtarın
           </p>
@@ -203,7 +203,7 @@ export default function SearchPill({
 
       {/* Nə vaxt */}
       {open === "when" && (
-        <div className="absolute z-40 mt-3 left-1/2 -translate-x-1/2 w-[92vw] sm:w-auto bg-white rounded-3xl shadow-lift border border-gece/10 p-6 animate-fade-up">
+        <div className="absolute z-40 mt-3 left-1/2 -translate-x-1/2 w-[92vw] sm:w-auto bg-qum rounded-3xl shadow-lift border border-gece/10 p-6 animate-fade-up">
           <CalendarPanel
             checkIn={checkIn}
             checkOut={checkOut}
@@ -229,7 +229,7 @@ export default function SearchPill({
             <button
               type="button"
               onClick={() => setOpen("who")}
-              className="bg-gece text-white text-sm font-semibold px-5 py-2.5 rounded-lg"
+              className="bg-gece text-qum text-sm font-semibold px-5 py-2.5 rounded-lg"
             >
               Növbəti
             </button>
@@ -239,7 +239,7 @@ export default function SearchPill({
 
       {/* Kimlər */}
       {open === "who" && (
-        <div className="absolute z-40 mt-3 right-0 w-full sm:w-[420px] bg-white rounded-3xl shadow-lift border border-gece/10 p-6 animate-fade-up">
+        <div className="absolute z-40 mt-3 right-0 w-full sm:w-[420px] bg-qum rounded-3xl shadow-lift border border-gece/10 p-6 animate-fade-up">
           <GuestsPicker value={guests} onChange={setGuests} />
           <button
             type="button"

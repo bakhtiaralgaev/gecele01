@@ -1,0 +1,42 @@
+name: CI
+
+# Hər push və PR-da qapı: tip yoxlaması + lint + testlər.
+# Bunlardan biri qırmızıdırsa — kod merge/deploy olunmamalıdır.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      # Testlər izolə SQLite faylında işləyir (global-setup yaradır)
+      DATABASE_URL: "file:./prisma/test.db"
+      AUTH_SECRET: "ci-secret-not-used-in-prod"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build

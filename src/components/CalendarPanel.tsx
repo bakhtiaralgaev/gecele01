@@ -90,7 +90,7 @@ export default function CalendarPanel({
                 aria-pressed={tab === key}
                 className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-colors ${
                   tab === key
-                    ? "bg-white text-gece shadow-yurd"
+                    ? "bg-qum text-gece shadow-yurd"
                     : "text-gece/60 hover:text-gece"
                 }`}
               >
@@ -133,7 +133,7 @@ export default function CalendarPanel({
                 aria-pressed={flex === n}
                 className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
                   flex === n
-                    ? "border-gece bg-white text-gece shadow-[inset_0_0_0_1px_#222]"
+                    ? "border-gece bg-qum text-gece shadow-[inset_0_0_0_1px_#222]"
                     : "border-gece/20 text-gece/70 hover:border-gece/50"
                 }`}
               >
@@ -156,7 +156,7 @@ export default function CalendarPanel({
                 aria-pressed={stay === s.key}
                 className={`px-5 py-2.5 rounded-full text-sm font-medium border transition-colors ${
                   stay === s.key
-                    ? "border-gece bg-white text-gece shadow-[inset_0_0_0_1px_#222]"
+                    ? "border-gece bg-qum text-gece shadow-[inset_0_0_0_1px_#222]"
                     : "border-gece/20 text-gece/70 hover:border-gece/50"
                 }`}
               >

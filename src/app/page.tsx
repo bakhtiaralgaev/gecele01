@@ -1,10 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ListingDto } from "@/lib/data";
 import ListingCard from "@/components/ListingCard";
 import MapView from "@/components/MapView";
 import SearchPill, { SearchQuery } from "@/components/SearchPill";
+import FiltersModal, {
+  Filters,
+  EMPTY_FILTERS,
+  activeFilterCount,
+  applyFiltersToParams,
+} from "@/components/FiltersModal";
 import {
   IconGarden,
   IconGrid,
@@ -41,23 +47,35 @@ export default function Home() {
   });
   const [poolOnly, setPoolOnly] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [listings, setListings] = useState<ListingDto[] | null>(null);
   const [error, setError] = useState(false);
 
+  // Baza sorğu (region/tarix/qonaq/hovuz) + verilmiş filtrlərdən URL params qur.
+  // Həm əsas siyahı fetch-i, həm də filtr modalındakı canlı say bunu paylaşır.
+  const buildParams = useCallback(
+    (f: Filters) => {
+      const params = new URLSearchParams();
+      if (query.region) params.set("region", query.region);
+      if (poolOnly) params.set("pool", "1");
+      if (query.guests > 0) params.set("guests", String(query.guests));
+      if (query.checkIn && query.checkOut) {
+        params.set("checkIn", query.checkIn);
+        params.set("checkOut", query.checkOut);
+        if (query.flex > 0) params.set("flex", String(query.flex));
+      }
+      applyFiltersToParams(f, params);
+      return params;
+    },
+    [query, poolOnly]
+  );
+
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (query.region) params.set("region", query.region);
-    if (poolOnly) params.set("pool", "1");
-    if (query.guests > 0) params.set("guests", String(query.guests));
-    if (query.checkIn && query.checkOut) {
-      params.set("checkIn", query.checkIn);
-      params.set("checkOut", query.checkOut);
-      if (query.flex > 0) params.set("flex", String(query.flex));
-    }
     let cancelled = false;
     setListings(null);
     setError(false);
-    fetch(`/api/listings?${params.toString()}`)
+    fetch(`/api/listings?${buildParams(filters).toString()}`)
       .then((r) => {
         if (!r.ok) throw new Error();
         return r.json();
@@ -72,8 +90,9 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [query, poolOnly]);
+  }, [buildParams, filters]);
 
+  const fcount = useMemo(() => activeFilterCount(filters), [filters]);
   const activeCat = poolOnly ? "__pool" : query.region;
 
   return (
@@ -150,52 +169,102 @@ export default function Home() {
             ))}
           </div>
         )}
-        {listings && listings.length > 0 && (
-          <div className="mb-5 flex items-center justify-between">
+        {listings && (
+          <div className="mb-5 flex items-center justify-between gap-3">
             <p className="text-sm font-medium text-gece/60">
               {listings.length} nəticə
             </p>
-            <button
-              onClick={() => setShowMap((s) => !s)}
-              className="flex items-center gap-2 bg-gece text-white text-sm font-semibold px-4 py-2.5 rounded-full hover:bg-gece/90 transition-colors"
-            >
-              {showMap ? "Siyahını göstər" : "Xəritədə göstər"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setFiltersOpen(true)}
+                className="flex items-center gap-2 border border-gece/25 hover:border-gece text-sm font-semibold text-gece px-4 py-2.5 rounded-full transition-colors"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="w-4 h-4"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M4 6h16M7 12h10M10 18h4"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                Filtrlər
+                {fcount > 0 && (
+                  <span className="bg-gece text-qum text-[11px] font-bold rounded-full min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center">
+                    {fcount}
+                  </span>
+                )}
+              </button>
+              {listings.length > 0 && (
+                <button
+                  onClick={() => setShowMap((s) => !s)}
+                  className="flex items-center gap-2 bg-gece text-qum text-sm font-semibold px-4 py-2.5 rounded-full hover:bg-gece/90 transition-colors"
+                >
+                  {showMap ? "Siyahı" : "Xəritə"}
+                </button>
+              )}
+            </div>
           </div>
         )}
-        {listings && showMap && listings.length > 0 && (
-          <MapView
-            variant="home"
-            points={listings.map((l) => ({
-              id: l.id,
-              slug: l.slug,
-              title: l.title,
-              region: l.region,
-              pricePerNight: l.pricePerNight,
-              rating: l.rating,
-              reviews: l.reviews,
-              photo: l.photo,
-              lat: l.lat ?? 40.6,
-              lng: l.lng ?? 48.5,
-            }))}
-            className="w-full h-[70vh] rounded-2xl overflow-hidden border border-gece/15 z-0"
-          />
+
+        {/* Xəritə açıq: masaüstündə yan-yana split (sol siyahı + sağ yapışqan
+            xəritə), mobalda tam xəritə */}
+        {listings && listings.length > 0 && showMap && (
+          <div className="lg:grid lg:grid-cols-2 lg:gap-6">
+            <div className="hidden lg:block lg:overflow-y-auto lg:max-h-[calc(100vh-13rem)] pr-1 -mr-1">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-4 gap-y-8">
+                {listings.map((l) => (
+                  <ListingCard key={l.id} listing={l} />
+                ))}
+              </div>
+            </div>
+            <MapView
+              variant="home"
+              points={listings.map((l) => ({
+                id: l.id,
+                slug: l.slug,
+                title: l.title,
+                region: l.region,
+                pricePerNight: l.pricePerNight,
+                rating: l.rating,
+                reviews: l.reviews,
+                photo: l.photo,
+                lat: l.lat ?? 40.6,
+                lng: l.lng ?? 48.5,
+              }))}
+              className="w-full h-[70vh] lg:h-[calc(100vh-13rem)] lg:sticky lg:top-24 rounded-2xl overflow-hidden border border-gece/15 z-0"
+            />
+          </div>
         )}
-        {listings && !showMap && (
+
+        {listings && listings.length > 0 && !showMap && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
             {listings.map((l) => (
               <ListingCard key={l.id} listing={l} />
             ))}
           </div>
         )}
+
         {listings && listings.length === 0 && (
           <div className="mt-16 text-center">
             <p className="font-semibold text-gece">
               Bu axtarışa uyğun ev tapılmadı
             </p>
             <p className="mt-1 text-sm text-gece/60">
-              Tarixləri və ya bölgəni dəyişməyi yoxlayın.
+              Tarixləri, bölgəni və ya filtrləri dəyişməyi yoxlayın.
             </p>
+            {fcount > 0 && (
+              <button
+                onClick={() => setFilters(EMPTY_FILTERS)}
+                className="mt-4 text-sm font-semibold text-nar underline underline-offset-4"
+              >
+                Filtrləri təmizlə
+              </button>
+            )}
           </div>
         )}
       </section>
@@ -230,6 +299,17 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <FiltersModal
+        open={filtersOpen}
+        initial={filters}
+        buildParams={buildParams}
+        onClose={() => setFiltersOpen(false)}
+        onApply={(f) => {
+          setFilters(f);
+          setFiltersOpen(false);
+        }}
+      />
     </main>
   );
 }

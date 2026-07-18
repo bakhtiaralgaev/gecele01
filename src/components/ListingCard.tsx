@@ -5,17 +5,12 @@ import { useEffect, useState } from "react";
 import type { ListingDto } from "@/lib/data";
 import { IconHeart, IconStar } from "./Icons";
 import { useToast } from "./Toast";
-
-const WISHLIST_KEY = "gecele_wishlist";
-
-function readWishlist(): string[] {
-  try {
-    const v = JSON.parse(window.localStorage.getItem(WISHLIST_KEY) ?? "[]");
-    return Array.isArray(v) ? v : [];
-  } catch {
-    return [];
-  }
-}
+import {
+  readLocalWishlist,
+  writeLocalWishlist,
+  pushWishlistChange,
+  WISHLIST_SYNCED_EVENT,
+} from "@/lib/wishlist";
 
 export default function ListingCard({ listing }: { listing: ListingDto }) {
   const [liked, setLiked] = useState(false);
@@ -23,18 +18,23 @@ export default function ListingCard({ listing }: { listing: ListingDto }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    setLiked(readWishlist().includes(listing.id));
+    const refresh = () => setLiked(readLocalWishlist().includes(listing.id));
+    refresh();
+    // Hesab sinxronundan sonra ürək vəziyyətini yenilə
+    window.addEventListener(WISHLIST_SYNCED_EVENT, refresh);
+    return () => window.removeEventListener(WISHLIST_SYNCED_EVENT, refresh);
   }, [listing.id]);
 
   const toggleLike = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const list = readWishlist();
+    const list = readLocalWishlist();
     const next = list.includes(listing.id)
       ? list.filter((x) => x !== listing.id)
       : [...list, listing.id];
-    window.localStorage.setItem(WISHLIST_KEY, JSON.stringify(next));
+    writeLocalWishlist(next);
     const isNowLiked = next.includes(listing.id);
+    pushWishlistChange(listing.id, isNowLiked);
     setLiked(isNowLiked);
     setHeartPop(true);
     window.setTimeout(() => setHeartPop(false), 280);
@@ -63,12 +63,12 @@ export default function ListingCard({ listing }: { listing: ListingDto }) {
           <IconHeart filled={liked} className={`w-6 h-6 drop-shadow ${heartPop ? "gecele-heart-pop" : ""}`} />
         </button>
         {listing.rating >= 4.8 && listing.reviews >= 10 ? (
-          <span className="absolute top-3 left-3 bg-white/95 text-gece text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
+          <span className="absolute top-3 left-3 bg-qum/95 text-gece text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
             Super ev sahibi
           </span>
         ) : (
           listing.pool && (
-            <span className="absolute top-3 left-3 bg-white/95 text-gece text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
+            <span className="absolute top-3 left-3 bg-qum/95 text-gece text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
               Hovuzlu
             </span>
           )

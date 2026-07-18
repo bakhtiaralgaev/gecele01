@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getGateway, isTestMode } from "@/lib/payments";
 import { notifyBookingConfirmed } from "@/lib/notify";
+import { recordDepositPaid } from "@/lib/ledger";
+import { audit, requestIp } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +72,16 @@ export async function POST(req: NextRequest) {
   }
 
   if (!charge.ok) {
+    // Uğursuz ödəniş cəhdi də iz qoyur — fırıldaq/kart sınaqlarını görmək üçün
+    await audit({
+      actor: booking.userId ?? `guest:${booking.code}`,
+      actorType: "user",
+      action: "payment.failed",
+      targetType: "booking",
+      targetId: booking.id,
+      meta: { code: booking.code, deposit: booking.deposit, error: charge.error },
+      ip: requestIp(req),
+    });
     return NextResponse.json(
       { error: charge.error ?? "Ödəniş alınmadı" },
       { status: 402 }
@@ -94,6 +106,34 @@ export async function POST(req: NextRequest) {
       { status: 409 }
     );
   }
+
+  // Mühasibat: beh daxil oldu, komissiya ayrıldı, hosta borc yarandı.
+  // Payout girişə qədər "pending" qalır — Beh Qoruması qaydası.
+  await recordDepositPaid({
+    id: booking.id,
+    total: booking.total,
+    deposit: booking.deposit,
+    checkIn: booking.checkIn,
+    paymentRef: charge.ref,
+    listingId: booking.listingId,
+  });
+
+  // Audit: pul daxil oldu — mübahisədə yeganə etibarlı iz
+  await audit({
+    actor: booking.userId ?? `guest:${booking.code}`,
+    actorType: "user",
+    action: "payment.confirmed",
+    targetType: "booking",
+    targetId: booking.id,
+    meta: {
+      code: booking.code,
+      deposit: booking.deposit,
+      total: booking.total,
+      paymentRef: charge.ref,
+      gateway: getGateway().name,
+    },
+    ip: requestIp(req),
+  });
 
   // Bildiriş — demo: konsola log, canlı: SMS/email
   await notifyBookingConfirmed({

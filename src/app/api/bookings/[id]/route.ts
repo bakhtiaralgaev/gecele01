@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getGateway, isTestMode } from "@/lib/payments";
 import { getSessionUser } from "@/lib/auth";
+import { recordRefund } from "@/lib/ledger";
+import { audit, requestIp } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +49,9 @@ export async function GET(
 
 const CANCEL_LOCK_HOURS = 48;
 
-// Rezervasiyanı ləğv et. Sahiblik: hesab sessiyası VƏ YA rezervdəki telefon.
+// Rezervasiyanı ləğv et.
+// Sahiblik: hesab sessiyası (userId) VƏ YA sessiya sahibinin OTP ilə
+// TƏSDİQLƏNMİŞ telefonu ilə edilmiş anonim rezerv.
 // Təsdiqlənmiş rezerv girişə 48 saatdan az qalıbsa onlayn ləğv olunmur.
 export async function PATCH(
   req: NextRequest,
@@ -70,11 +74,21 @@ export async function PATCH(
     return NextResponse.json({ error: "Rezervasiya tapılmadı" }, { status: 404 });
   }
 
+  // TƏHLÜKƏSİZLİK: əvvəllər gövdədəki telefon sahiblik sübutu sayılırdı —
+  // nömrəni bilən yad adam başqasının rezervini ləğv edib refund tetikləyə
+  // bilirdi. İndi sessiya məcburidir.
   const user = await getSessionUser(req);
-  const phone = String(body.phone ?? "").replace(/\s/g, "");
-  const ownsBySession = Boolean(user && booking.userId === user.id);
-  const ownsByPhone = phone.length > 0 && booking.guestPhone === phone;
-  if (!ownsBySession && !ownsByPhone) {
+  if (!user) {
+    return NextResponse.json(
+      { error: "Ləğv etmək üçün daxil olun" },
+      { status: 401 }
+    );
+  }
+  const ownsBySession = booking.userId === user.id;
+  const ownsByVerifiedPhone = Boolean(
+    user.phone && booking.guestPhone === user.phone
+  );
+  if (!ownsBySession && !ownsByVerifiedPhone) {
     return NextResponse.json(
       { error: "Bu rezervasiyanı ləğv etmək icazəniz yoxdur" },
       { status: 403 }
@@ -122,6 +136,26 @@ export async function PATCH(
       refundedAt: refundRef ? new Date() : null,
       refundRef,
     },
+  });
+
+  // Mühasibat: hosta borc ləğv olunur, qaytarılan beh yazılır
+  await recordRefund(booking.id, refundRef ? booking.deposit : 0, refundRef);
+
+  // Audit: qonaq özü ləğv etdi + refundun nəticəsi
+  await audit({
+    actor: user.id,
+    actorType: "user",
+    action: "booking.cancel",
+    targetType: "booking",
+    targetId: booking.id,
+    meta: {
+      code: booking.code,
+      deposit: booking.deposit,
+      wasPaid: Boolean(booking.paidAt),
+      refunded: Boolean(refundRef),
+      refundRef,
+    },
+    ip: requestIp(req),
   });
 
   return NextResponse.json({

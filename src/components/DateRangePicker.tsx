@@ -69,7 +69,7 @@ export default function DateRangePicker({
       </button>
 
       {open && (
-        <div className="absolute z-30 mt-2 right-0 bg-white rounded-3xl shadow-lift border border-gece/10 p-5">
+        <div className="absolute z-30 mt-2 right-0 bg-qum rounded-3xl shadow-lift border border-gece/10 p-5">
           <CalendarPanel
             compact
             months={months}

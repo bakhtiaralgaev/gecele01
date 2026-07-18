@@ -1,6 +1,4 @@
-export type SoundName = "pop" | "success" | "like" | "error" | "tick";
-
-const MUTED_KEY = "gecele_muted";
+export type SoundName = "pop" | "success" | "like" | "error" | "tick" | "notify";
 
 let audioContext: AudioContext | null = null;
 let masterGain: GainNode | null = null;
@@ -20,7 +18,7 @@ function getAudioContext(): AudioContext | null {
     try {
       const context = new AudioContextConstructor();
       const gain = context.createGain();
-      gain.gain.value = 0.15;
+      gain.gain.value = 0.22; // eşidiləcək, amma yumşaq
       gain.connect(context.destination);
       audioContext = context;
       masterGain = gain;
@@ -32,25 +30,11 @@ function getAudioContext(): AudioContext | null {
   return audioContext;
 }
 
-export function isMuted(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(MUTED_KEY) === "true";
-  } catch {
-    return false;
-  }
-}
-
-export function setMuted(muted: boolean): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(MUTED_KEY, String(muted));
-  } catch {
-    // Məxfilik rejimində yaddaş əlçatan olmaya bilər.
-  }
-}
-
-/** İlk istifadəçi jestində AudioContext-i oyadır. */
+/**
+ * İlk istifadəçi jestində AudioContext-i oyadır. Qlobal olaraq ilk klik/klaviatura
+ * hadisəsində çağırılır (Toast provider) — bundan sonra polling ilə gələn
+ * bildiriş səsləri də etibarlı işləyir.
+ */
 export function primeSound(): void {
   hasInteracted = true;
   const context = getAudioContext();
@@ -85,23 +69,28 @@ function playTone(context: AudioContext, tone: Tone): void {
 }
 
 const SOUND_TONES: Record<SoundName, Tone[]> = {
-  pop: [{ frequency: 660, duration: 0.09, volume: 0.055, wave: "sine" }],
+  pop: [{ frequency: 660, duration: 0.09, volume: 0.06, wave: "sine" }],
   success: [
-    { frequency: 523.25, duration: 0.13, volume: 0.075, wave: "sine" },
-    { frequency: 659.25, duration: 0.14, delay: 0.1, volume: 0.07, wave: "sine" },
-    { frequency: 783.99, duration: 0.18, delay: 0.2, volume: 0.065, wave: "sine" },
+    { frequency: 523.25, duration: 0.13, volume: 0.08, wave: "sine" },
+    { frequency: 659.25, duration: 0.14, delay: 0.1, volume: 0.075, wave: "sine" },
+    { frequency: 783.99, duration: 0.18, delay: 0.2, volume: 0.07, wave: "sine" },
   ],
-  like: [{ frequency: 440, duration: 0.11, volume: 0.065, wave: "triangle" }],
+  like: [{ frequency: 440, duration: 0.11, volume: 0.07, wave: "triangle" }],
   error: [
-    { frequency: 180, duration: 0.18, volume: 0.055, wave: "triangle" },
-    { frequency: 150, duration: 0.16, delay: 0.1, volume: 0.045, wave: "triangle" },
+    { frequency: 180, duration: 0.18, volume: 0.06, wave: "triangle" },
+    { frequency: 150, duration: 0.16, delay: 0.1, volume: 0.05, wave: "triangle" },
   ],
-  tick: [{ frequency: 900, duration: 0.045, volume: 0.025, wave: "sine" }],
+  tick: [{ frequency: 900, duration: 0.045, volume: 0.03, wave: "sine" }],
+  // Bildiriş: yüksələn iki not (G5→C6) — aydın eşidilən, xoş zəng
+  notify: [
+    { frequency: 783.99, duration: 0.13, volume: 0.14, wave: "sine" },
+    { frequency: 1046.5, duration: 0.2, delay: 0.12, volume: 0.13, wave: "sine" },
+  ],
 };
 
-/** Xarici faylsız, yumşaq Web Audio bildiriş səsləri. */
+/** Xarici faylsız, yumşaq Web Audio səsləri. İlk jestdən sonra işləyir. */
 export function playSound(name: SoundName): void {
-  if (isMuted() || !hasInteracted) return;
+  if (!hasInteracted) return;
 
   const context = getAudioContext();
   if (!context) return;

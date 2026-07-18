@@ -113,7 +113,7 @@ export default function AdminPage() {
         </h1>
         <form
           onSubmit={login}
-          className="mt-6 bg-white rounded-yurd shadow-yurd p-5 space-y-4"
+          className="mt-6 bg-qum rounded-yurd shadow-yurd p-5 space-y-4"
         >
           <label className="block">
             <span className="text-xs font-bold uppercase text-gece/50">
@@ -147,7 +147,7 @@ export default function AdminPage() {
   if (!data) {
     return (
       <main className="mx-auto max-w-4xl px-4 mt-8">
-        <div className="h-40 bg-white rounded-yurd shadow-yurd animate-pulse" />
+        <div className="h-40 bg-qum rounded-yurd shadow-yurd animate-pulse" />
       </main>
     );
   }
@@ -181,7 +181,7 @@ export default function AdminPage() {
       {/* Statistika */}
       <div className="mt-5 grid grid-cols-2 sm:grid-cols-5 gap-3">
         {statCards.map((c) => (
-          <div key={c.label} className="bg-white rounded-yurd shadow-yurd p-4">
+          <div key={c.label} className="bg-qum rounded-yurd shadow-yurd p-4">
             <div className="text-2xl font-extrabold text-mese">{c.value}</div>
             <div className="mt-0.5 text-[11px] font-bold text-gece/50 uppercase leading-tight">
               {c.label}
@@ -203,7 +203,7 @@ export default function AdminPage() {
           {data.pendingListings.map((l) => (
             <div
               key={l.id}
-              className="bg-white rounded-yurd shadow-yurd p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+              className="bg-qum rounded-yurd shadow-yurd p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
             >
               <div>
                 <div className="font-bold">{l.title}</div>
@@ -238,7 +238,7 @@ export default function AdminPage() {
 
       {/* Rezervasiyalar */}
       <h2 className="mt-8 font-bold text-lg">Son rezervasiyalar</h2>
-      <div className="mt-3 overflow-x-auto bg-white rounded-yurd shadow-yurd">
+      <div className="mt-3 overflow-x-auto bg-qum rounded-yurd shadow-yurd">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-[11px] uppercase text-gece/50 border-b border-gece/10">

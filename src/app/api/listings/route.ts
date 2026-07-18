@@ -63,6 +63,11 @@ function toDto(l: {
 const DAY_MS = 86_400_000;
 const MAX_FLEX = 14;
 
+function clampInt(raw: string | null, min: number): number {
+  const n = Math.trunc(Number(raw ?? 0));
+  return Number.isFinite(n) ? Math.max(min, n) : min;
+}
+
 /** Verilmiş pəncərədə heç bir canlı rezervasiya ilə kəsişməyən elanlar. */
 function freeBetween(checkIn: Date, checkOut: Date, now: Date) {
   return {
@@ -91,6 +96,22 @@ export async function GET(req: NextRequest) {
   const flex = Number.isFinite(flexRaw)
     ? Math.min(MAX_FLEX, Math.max(0, flexRaw))
     : 0;
+
+  // Zəngin filtrlər: qiymət diapazonu, ev tipi, yataq otağı, imkanlar
+  const minPrice = clampInt(p.get("minPrice"), 0);
+  const maxPrice = clampInt(p.get("maxPrice"), 0);
+  const bedrooms = clampInt(p.get("bedrooms"), 0);
+  const priceFilter: { gte?: number; lte?: number } = {};
+  if (minPrice > 0) priceFilter.gte = minPrice;
+  if (maxPrice > 0 && maxPrice >= minPrice) priceFilter.lte = maxPrice;
+  const typeList = (p.get("type") ?? "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const amenitiesReq = (p.get("amenities") ?? "")
+    .split(",")
+    .map((a) => a.trim())
+    .filter(Boolean);
 
   let availability = {};
   if (
@@ -123,12 +144,21 @@ export async function GET(req: NextRequest) {
       ...(region ? { region } : {}),
       ...(pool === "1" ? { pool: true } : {}),
       ...(guests > 0 ? { maxGuests: { gte: guests } } : {}),
+      ...(Object.keys(priceFilter).length ? { pricePerNight: priceFilter } : {}),
+      ...(typeList.length ? { type: { in: typeList } } : {}),
+      ...(bedrooms > 0 ? { bedrooms: { gte: bedrooms } } : {}),
       ...availability,
     },
     orderBy: [{ reviews: "desc" }, { createdAt: "desc" }],
   });
 
-  return NextResponse.json(listings.map(toDto));
+  // İmkanlar SQLite-də JSON mətn kimi saxlanır — Prisma sorğusunda süzülmür,
+  // ona görə yüklədikdən sonra bütün seçilmiş imkanları ehtiva edənləri saxlayırıq.
+  const dtos = listings
+    .map(toDto)
+    .filter((d) => amenitiesReq.every((a) => d.amenities.includes(a)));
+
+  return NextResponse.json(dtos);
 }
 
 // Ev sahibi müraciəti — moderasiya üçün "pending" statusla düşür

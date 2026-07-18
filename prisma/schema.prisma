@@ -1,13 +1,18 @@
 // Gecələ — istirahət evləri marketpleysi
-// SQLite ilə v1; sahələr Postgres-ə birbaşa köçürülə bilən şəkildə seçilib.
+// Neon Postgres (eu-central-1). Lokal, test və canlı — eyni motor.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
+  // Saytın normal işi: pooler-dən keçir. Serverless yüzlərlə qısa bağlantı
+  // açır, Postgres isə ~100 tutur — PgBouncer onları birləşdirir.
+  url = env("DATABASE_URL")
+  // Migration-lar: pooler-siz. Prisma advisory lock işlədir, transaction
+  // rejimindəki pooler onu qırır.
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -21,6 +26,12 @@ model User {
   createdAt    DateTime  @default(now())
   listings     Listing[]
   bookings     Booking[]
+
+  // Ev sahibinə ödəniş rekvizitləri. Bank inteqrasiyası təsdiqlənənə qədər
+  // yalnız yığılır — pul hərəkəti payout adapteri ilə aparılacaq.
+  payoutIban       String?
+  payoutName       String? // hesab sahibinin adı (bankdakı kimi)
+  payoutVerifiedAt DateTime?
 }
 
 model Listing {
@@ -93,6 +104,7 @@ model Booking {
   recoveryNotifiedAt DateTime? // tərk edilmiş rezerv xatırlatması göndərilib
   createdAt  DateTime  @default(now())
   messages   Message[]
+  payout     Payout?
 
   @@index([listingId, checkIn])
   @@index([guestPhone])
@@ -127,6 +139,76 @@ model Message {
   createdAt DateTime @default(now())
 
   @@index([bookingId, createdAt])
+}
+
+// Seçilmişlər — hesaba bağlı wishlist (cihazlar arası sinxron). Giriş edən
+// istifadəçinin lokal seçimləri buraya birləşdirilir. listingId sadə mətndir
+// (Message modeli kimi) — referatik əlaqə tələb olunmur.
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+// Ev sahibinə ödəniləcək məbləğ (payable).
+// Beh Qoruması qaydası: beh qonaq evə GİRƏNƏ QƏDƏR platformada qalır —
+// ona görə payout yalnız eligibleAt (giriş tarixi) çatandan sonra açılır.
+// amount = beh − komissiya. Qalıq məbləği qonaq girişdə nağd ödəyir.
+model Payout {
+  id         String    @id @default(cuid())
+  booking    Booking   @relation(fields: [bookingId], references: [id])
+  bookingId  String    @unique
+  hostUserId String? // elanın sahibi (Listing.ownerId); sahibsiz elanda null
+  amount     Int // hosta çatan (AZN)
+  commission Int // platformanın payı — xidmət haqqı (AZN)
+  status     String    @default("pending") // pending | eligible | processing | paid | failed | cancelled
+  eligibleAt DateTime // girişdən sonra ödənişə açılır
+  paidAt     DateTime?
+  ref        String    @default("") // bank əməliyyat referansı
+  failure    String    @default("")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([status, eligibleAt])
+  @@index([hostUserId])
+}
+
+// Mühasibat izi (audit trail): hər pul hərəkəti bir sətir.
+// Yalnız əlavə olunur — heç vaxt dəyişdirilmir/silinmir.
+model LedgerEntry {
+  id        String   @id @default(cuid())
+  bookingId String
+  kind      String // deposit_in | commission | host_payable | refund_out | payout_out
+  amount    Int // AZN, həmişə müsbət
+  ref       String   @default("")
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([bookingId, createdAt])
+  @@index([kind, createdAt])
+}
+
+// Audit izi — kim, nə vaxt, nəyi dəyişdi. Yalnız append.
+// Admin əməliyyatları və pul hərəkətləri buraya düşür. Mübahisə/fırıldaq
+// araşdırmasında yeganə etibarlı mənbədir.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actor      String // "admin" | userId | "system" | "cron"
+  actorType  String // admin | user | system
+  action     String // listing.approve | booking.cancel | payout.paid ...
+  targetType String // listing | booking | payout | user
+  targetId   String
+  meta       String   @default("") // JSON — əlavə kontekst
+  ip         String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId, createdAt])
+  @@index([actor, createdAt])
+  @@index([action, createdAt])
 }
 
 // Telefon OTP kodları — yalnız canlı SMS rejimində istifadə olunur.

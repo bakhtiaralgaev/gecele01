@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ user: user ? toUserDto(user) : null });
 }
 
-// Rol yüksəltmə: qonaq hesabı ev sahibi hesabına çevrilir
+// Profil yeniləmə: ad dəyişikliyi və/və ya rol keçidi (qonaq ↔ ev sahibi)
 export async function PATCH(req: NextRequest) {
   const user = await getSessionUser(req);
   if (!user) {
@@ -21,12 +21,34 @@ export async function PATCH(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Yanlış sorğu" }, { status: 400 });
   }
-  if (body.role !== "host" && body.role !== "guest") {
-    return NextResponse.json({ error: "Naməlum rol" }, { status: 400 });
+
+  const data: { name?: string; role?: string } = {};
+
+  if (body.name !== undefined) {
+    const name = String(body.name).trim();
+    if (name.length < 2 || name.length > 40) {
+      return NextResponse.json(
+        { error: "Ad 2–40 simvol olmalıdır" },
+        { status: 400 }
+      );
+    }
+    data.name = name;
   }
+
+  if (body.role !== undefined) {
+    if (body.role !== "host" && body.role !== "guest") {
+      return NextResponse.json({ error: "Naməlum rol" }, { status: 400 });
+    }
+    data.role = body.role;
+  }
+
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "Dəyişiklik yoxdur" }, { status: 400 });
+  }
+
   const updated = await prisma.user.update({
     where: { id: user.id },
-    data: { role: body.role },
+    data,
   });
   return NextResponse.json({ user: toUserDto(updated) });
 }

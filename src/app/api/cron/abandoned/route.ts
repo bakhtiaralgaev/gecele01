@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { notifyAbandonedBooking } from "@/lib/notify";
+import { markEligiblePayouts } from "@/lib/ledger";
 
 export const dynamic = "force-dynamic";
 
@@ -70,5 +71,14 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, candidates: abandoned.length, sent });
+  // Beh Qoruması: girişi çatmış rezervlərin behini ev sahibinə ödənişə aç
+  // (pending → eligible). İdempotentdir, hər run-da təhlükəsiz işləyir.
+  const eligible = await markEligiblePayouts();
+
+  return NextResponse.json({
+    ok: true,
+    candidates: abandoned.length,
+    sent,
+    payoutsEligible: eligible,
+  });
 }

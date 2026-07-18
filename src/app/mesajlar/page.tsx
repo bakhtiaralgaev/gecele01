@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
 
 interface Convo {
   bookingId: string;
@@ -201,6 +202,7 @@ export default function MessagesPage() {
                 >
                   ←
                 </button>
+                <Avatar name={otherName || "?"} size={36} />
                 <div>
                   <div className="font-semibold text-gece">{otherName}</div>
                   <div className="text-xs text-gece/50">{activeConvo?.title}</div>

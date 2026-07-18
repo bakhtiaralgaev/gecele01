@@ -16,7 +16,7 @@ export default function IntroSplash() {
     if (seen || reduced) return;
     window.sessionStorage.setItem("gecele_intro", "1");
     setShow(true);
-    const t = setTimeout(() => setShow(false), 2850);
+    const t = setTimeout(() => setShow(false), 3250);
     return () => clearTimeout(t);
   }, []);
 
@@ -26,30 +26,31 @@ export default function IntroSplash() {
 
   return (
     <div className="intro-overlay" aria-hidden="true">
+      <span className="intro-aurora intro-aurora-1" />
+      <span className="intro-aurora intro-aurora-2" />
+      <span className="intro-grid" />
       <div className="intro-inner">
-        <div className="intro-word font-serif font-extrabold text-gece text-6xl sm:text-8xl tracking-tight leading-none">
-          {letters.map((ch, i) => (
-            <span
-              key={i}
-              className="intro-letter"
-              style={{ animationDelay: `${140 + i * 75}ms` }}
-            >
-              {ch}
+        <div className="intro-word-wrap">
+          <div className="intro-word font-serif font-extrabold text-white text-6xl sm:text-8xl tracking-tight leading-none">
+            {letters.map((ch, i) => (
+              <span
+                key={i}
+                className="intro-letter"
+                style={{ animationDelay: `${180 + i * 70}ms` }}
+              >
+                {ch}
+              </span>
+            ))}
+            <span className="intro-dot" style={{ animationDelay: "720ms" }}>
+              <IconHeart filled className="w-[0.5em] h-[0.5em] intro-heart-beat" />
             </span>
-          ))}
-          <span className="intro-dot" style={{ animationDelay: "760ms" }}>
-            <IconHeart filled className="w-[0.5em] h-[0.5em]" />
-          </span>
+          </div>
+          <span className="intro-sheen" />
         </div>
-        <p
-          className="intro-tagline font-slogan italic mt-6 text-gece/60 text-lg sm:text-2xl"
-          style={{ animationDelay: "1150ms" }}
-        >
+        <span className="intro-line" />
+        <p className="intro-tagline font-serif mt-7 text-white/55 text-sm sm:text-lg">
           istirahətin yeni ünvanı
         </p>
-        <div className="intro-bar">
-          <span className="intro-bar-fill" />
-        </div>
       </div>
     </div>
   );

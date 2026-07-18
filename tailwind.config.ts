@@ -1,28 +1,33 @@
 import type { Config } from "tailwindcss";
 
 // Gecələ — Airbnb-səviyyə minimal dizayn tokenləri
+// Rənglər CSS dəyişənlərinə bağlıdır — gecə/gündüz rejimi bir yerdən idarə
+// olunur. Beləliklə 617 mövcud sinif (`text-gece/60` kimi opacity daxil)
+// dəyişmədən işləyir; dəyərlər globals.css-də :root və .dark altındadır.
+// `<alpha-value>` Tailwind-ın opacity sintaksisini qoruyur.
 const config: Config = {
+  darkMode: "class",
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        qum: "#FFFFFF", // fon — təmiz ağ
-        gece: "#222222", // əsas mətn
+        qum: "rgb(var(--c-qum) / <alpha-value>)", // səhifə fonu
+        gece: "rgb(var(--c-gece) / <alpha-value>)", // əsas mətn
         nar: {
-          DEFAULT: "#E31C5F", // CTA aksenti
-          dark: "#C1134E",
-          soft: "#FFE9F0",
+          DEFAULT: "rgb(var(--c-nar) / <alpha-value>)", // CTA aksenti
+          dark: "rgb(var(--c-nar-dark) / <alpha-value>)",
+          soft: "rgb(var(--c-nar-soft) / <alpha-value>)",
         },
         mese: {
-          DEFAULT: "#1F4D3A", // yalnız etibar/escrow elementləri
-          dark: "#153627",
-          soft: "#E8F2ED",
+          DEFAULT: "rgb(var(--c-mese) / <alpha-value>)", // etibar/escrow
+          dark: "rgb(var(--c-mese-dark) / <alpha-value>)",
+          soft: "rgb(var(--c-mese-soft) / <alpha-value>)",
         },
         xezer: {
-          DEFAULT: "#2E7E8C",
-          soft: "#E2F0F3",
+          DEFAULT: "rgb(var(--c-xezer) / <alpha-value>)",
+          soft: "rgb(var(--c-xezer-soft) / <alpha-value>)",
         },
-        kraft: "#F7F7F7", // yumşaq boz panel fonu
+        kraft: "rgb(var(--c-kraft) / <alpha-value>)", // yumşaq panel fonu
       },
       fontFamily: {
         serif: ["var(--font-serif)", "system-ui", "sans-serif"], // başlıqlar (Manrope)
@@ -32,10 +37,11 @@ const config: Config = {
       borderRadius: {
         yurd: "1rem",
       },
+      // Kölgələr də temaya bağlıdır — qaranlıqda açıq kölgə görünmür
       boxShadow: {
-        yurd: "0 1px 2px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)",
-        lift: "0 6px 16px rgba(0,0,0,0.12)",
-        pill: "0 3px 12px rgba(0,0,0,0.10)",
+        yurd: "var(--s-yurd)",
+        lift: "var(--s-lift)",
+        pill: "var(--s-pill)",
       },
       keyframes: {
         fadeUp: {

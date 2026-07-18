@@ -19,10 +19,22 @@ export interface ChargeResult {
   redirectUrl?: string; // hosted checkout üçün (Payriff canlı rejim)
 }
 
+export interface OrderStatus {
+  paid: boolean;
+  error?: string;
+}
+
 interface PaymentGateway {
   name: string;
   charge(input: ChargeInput): Promise<ChargeResult>;
   refund(ref: string, amountAzn: number): Promise<ChargeResult>;
+  /**
+   * Sifarişin ÖDƏNİLİB-ödənilmədiyini şlüzün özündən soruşur.
+   * Hosted checkout qayıdışında (callback) istifadə olunur: brauzerdən gələn
+   * URL-ə güvənmirik — təsdiq yalnız şlüzün cavabı ilə verilir.
+   * Naməlum/şübhəli cavabda fail-closed: paid=false.
+   */
+  getOrderStatus(ref: string): Promise<OrderStatus>;
 }
 
 const testGateway: PaymentGateway = {
@@ -47,6 +59,11 @@ const testGateway: PaymentGateway = {
   async refund(ref) {
     // Test rejimində geri qaytarma həmişə uğurludur
     return { ok: true, ref: `TEST-REFUND-${ref}` };
+  },
+  async getOrderStatus() {
+    // Test rejimində hosted checkout yoxdur — təsdiq birbaşa charge ilə verilir.
+    // Callback bu rejimdə heç vaxt təsdiq etməməlidir.
+    return { paid: false, error: "Test rejimində hosted checkout yoxdur" };
   },
 };
 
@@ -117,6 +134,33 @@ const payriffGateway: PaymentGateway = {
       return { ok: false, ref: "", error: "Geri qaytarma alınmadı" };
     }
   },
+  // Sifarişin real statusunu Payriff-dən soruşur (server-to-server).
+  // ⚠️ Cavab formatı canlı açarlarla Payriff sənədinə görə təsdiqlənməlidir —
+  // naməlum format fail-closed sayılır (paid=false), yəni saxta təsdiq olmur.
+  async getOrderStatus(ref) {
+    if (!ref) return { paid: false, error: "orderId yoxdur" };
+    try {
+      const res = await fetch(`${PAYRIFF_BASE}/orders/${encodeURIComponent(ref)}`, {
+        method: "GET",
+        signal: AbortSignal.timeout(10_000),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: process.env.PAYRIFF_SECRET_KEY ?? "",
+        },
+      });
+      const data = await res.json();
+      const p = data?.payload ?? {};
+      const status = String(
+        p.orderStatus ?? p.paymentStatus ?? p.status ?? ""
+      ).toUpperCase();
+      const paid =
+        data?.code === "00000" &&
+        (status === "APPROVED" || status === "PAID" || status === "FULLY_PAID");
+      return paid ? { paid: true } : { paid: false, error: status || "naməlum status" };
+    } catch {
+      return { paid: false, error: "Şlüzlə əlaqə yaranmadı" };
+    }
+  },
 };
 
 // Prod-da real şlüz konfiqurasiya olunmayıbsa fail closed — saxta kart
@@ -128,6 +172,9 @@ const closedGateway: PaymentGateway = {
   },
   async refund() {
     return { ok: false, ref: "", error: "Geri qaytarma hazırda mümkün deyil" };
+  },
+  async getOrderStatus() {
+    return { paid: false, error: "Ödəniş sistemi konfiqurasiya olunmayıb" };
   },
 };
 
